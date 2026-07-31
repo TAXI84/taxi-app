@@ -6,7 +6,7 @@ from typing import Optional, List
 import uuid
 import os
 
-app = FastAPI(title="TaxiCPAM", version="1.1.0")
+app = FastAPI(title="TaxiCPAM", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,33 +50,27 @@ def suggest_code(km: float) -> str:
     return "T4"
 
 
-def build_advice(code: str, km: float, ok: bool) -> dict:
-    """Conseiller anti-rejet CPAM (règles métier + message clair)."""
+def build_advice(code: str, km: float) -> dict:
     suggested = suggest_code(km)
     alertes: List[str] = []
-    conseils: List[str] = []
 
     if code not in TARIFS:
-        alertes.append("Code transport inconnu.")
-        conseils.append(f"Utilise le code {suggested} pour {km} km ({TARIFS[suggested]['label']}).")
         return {
             "ok": False,
             "compatible": False,
             "message": "Code transport invalide — risque de refus CPAM",
             "montant": None,
             "montant_calcule": None,
-            "alertes": alertes,
-            "conseil": conseils[0],
+            "alertes": ["Code transport inconnu."],
+            "conseil": f"Utilise le code {suggested} pour {km} km ({TARIFS[suggested]['label']}).",
             "code_suggere": suggested,
             "ia": "anti-rejet",
         }
 
     regle = TARIFS[code]
 
-    # T5 = Paris : accepté sans borne km stricte
     if code == "T5":
         montant = round(regle["base"] + (km * regle["km"]), 2)
-        conseils.append("Code T5 (Paris) accepté. Vérifie que le trajet est bien en région parisienne.")
         return {
             "ok": True,
             "compatible": True,
@@ -84,36 +78,31 @@ def build_advice(code: str, km: float, ok: bool) -> dict:
             "montant": montant,
             "montant_calcule": montant,
             "alertes": [],
-            "conseil": conseils[0],
+            "conseil": "Code T5 (Paris) accepté. Vérifie que le trajet est bien en région parisienne.",
             "code_suggere": "T5",
             "ia": "anti-rejet",
         }
 
     if not (regle["min"] <= km <= regle["max"]):
-        msg = f"Code {code} incompatible avec {km} km"
-        alertes.append(msg)
-        alertes.append(f"{code} est réservé à : {regle['label']}.")
-        conseils.append(
-            f"Change le code en {suggested} (adapté à {km} km — {TARIFS[suggested]['label']}). "
-            f"Sinon la CPAM peut refuser la facture."
-        )
         return {
             "ok": False,
             "compatible": False,
             "message": "Risque de refus CPAM",
             "montant": None,
             "montant_calcule": None,
-            "alertes": alertes,
-            "conseil": conseils[0],
+            "alertes": [
+                f"Code {code} incompatible avec {km} km",
+                f"{code} est réservé à : {regle['label']}.",
+            ],
+            "conseil": (
+                f"Change le code en {suggested} (adapté à {km} km — {TARIFS[suggested]['label']}). "
+                f"Sinon la CPAM peut refuser la facture."
+            ),
             "code_suggere": suggested,
             "ia": "anti-rejet",
         }
 
     montant = round(regle["base"] + (km * regle["km"]), 2)
-    conseils.append(
-        f"Code {code} cohérent avec {km} km. Montant estimé {montant} €. "
-        f"Tu peux valider et exporter."
-    )
     return {
         "ok": True,
         "compatible": True,
@@ -121,7 +110,7 @@ def build_advice(code: str, km: float, ok: bool) -> dict:
         "montant": montant,
         "montant_calcule": montant,
         "alertes": [],
-        "conseil": conseils[0],
+        "conseil": f"Code {code} cohérent avec {km} km. Montant estimé {montant} €.",
         "code_suggere": code,
         "ia": "anti-rejet",
     }
@@ -129,7 +118,7 @@ def build_advice(code: str, km: float, ok: bool) -> dict:
 
 @app.get("/")
 def root():
-    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.1.0"}
+    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.2.0"}
 
 
 @app.get("/health")
@@ -164,6 +153,21 @@ def list_courses():
     return list(reversed(list(courses_db.values())))
 
 
+@app.get("/courses/{course_id}")
+def get_course(course_id: str):
+    if course_id not in courses_db:
+        raise HTTPException(status_code=404, detail="Course non trouvée")
+    return courses_db[course_id]
+
+
+@app.delete("/courses/{course_id}")
+def delete_course(course_id: str):
+    if course_id not in courses_db:
+        raise HTTPException(status_code=404, detail="Course non trouvée")
+    del courses_db[course_id]
+    return {"ok": True, "message": "Course supprimée"}
+
+
 @app.post("/courses/{course_id}/verify")
 def verify_course(course_id: str):
     if course_id not in courses_db:
@@ -172,8 +176,7 @@ def verify_course(course_id: str):
     course = courses_db[course_id]
     code = course["code_transport"]
     km = float(course["kilometrage"])
-
-    result = build_advice(code, km, ok=True)
+    result = build_advice(code, km)
 
     if result["ok"]:
         course["montant"] = result["montant"]
@@ -231,7 +234,7 @@ def refresh_alerts():
     alerts_db.append({
         "id": str(uuid.uuid4()),
         "titre": "Veille réglementaire — mise à jour",
-        "contenu": "Scraping simulé exécuté. Aucun changement critique détecté.",
+        "contenu": "Scraping simulé. Aucun changement critique détecté.",
         "categorie": "obligations",
         "date_application": date.today().isoformat(),
         "niveau": "national",
