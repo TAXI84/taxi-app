@@ -2,11 +2,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 import uuid
 import os
 
-app = FastAPI(title="TaxiCPAM", version="1.0.0")
+app = FastAPI(title="TaxiCPAM", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,11 +20,11 @@ courses_db = {}
 alerts_db = []
 
 TARIFS = {
-    "T1": {"min": 0, "max": 50, "base": 25.0, "km": 1.20},
-    "T2": {"min": 50, "max": 100, "base": 45.0, "km": 1.10},
-    "T3": {"min": 100, "max": 200, "base": 80.0, "km": 1.00},
-    "T4": {"min": 200, "max": 9999, "base": 120.0, "km": 0.90},
-    "T5": {"min": 0, "max": 9999, "base": 35.0, "km": 1.50},
+    "T1": {"min": 0, "max": 50, "base": 25.0, "km": 1.20, "label": "0 à 50 km"},
+    "T2": {"min": 50, "max": 100, "base": 45.0, "km": 1.10, "label": "50 à 100 km"},
+    "T3": {"min": 100, "max": 200, "base": 80.0, "km": 1.00, "label": "100 à 200 km"},
+    "T4": {"min": 200, "max": 9999, "base": 120.0, "km": 0.90, "label": "200 km et plus"},
+    "T5": {"min": 0, "max": 9999, "base": 35.0, "km": 1.50, "label": "région parisienne"},
 }
 
 
@@ -40,9 +40,96 @@ class CourseCreate(BaseModel):
     code_transport: str
 
 
+def suggest_code(km: float) -> str:
+    if km < 50:
+        return "T1"
+    if km < 100:
+        return "T2"
+    if km < 200:
+        return "T3"
+    return "T4"
+
+
+def build_advice(code: str, km: float, ok: bool) -> dict:
+    """Conseiller anti-rejet CPAM (règles métier + message clair)."""
+    suggested = suggest_code(km)
+    alertes: List[str] = []
+    conseils: List[str] = []
+
+    if code not in TARIFS:
+        alertes.append("Code transport inconnu.")
+        conseils.append(f"Utilise le code {suggested} pour {km} km ({TARIFS[suggested]['label']}).")
+        return {
+            "ok": False,
+            "compatible": False,
+            "message": "Code transport invalide — risque de refus CPAM",
+            "montant": None,
+            "montant_calcule": None,
+            "alertes": alertes,
+            "conseil": conseils[0],
+            "code_suggere": suggested,
+            "ia": "anti-rejet",
+        }
+
+    regle = TARIFS[code]
+
+    # T5 = Paris : accepté sans borne km stricte
+    if code == "T5":
+        montant = round(regle["base"] + (km * regle["km"]), 2)
+        conseils.append("Code T5 (Paris) accepté. Vérifie que le trajet est bien en région parisienne.")
+        return {
+            "ok": True,
+            "compatible": True,
+            "message": "Course conforme",
+            "montant": montant,
+            "montant_calcule": montant,
+            "alertes": [],
+            "conseil": conseils[0],
+            "code_suggere": "T5",
+            "ia": "anti-rejet",
+        }
+
+    if not (regle["min"] <= km <= regle["max"]):
+        msg = f"Code {code} incompatible avec {km} km"
+        alertes.append(msg)
+        alertes.append(f"{code} est réservé à : {regle['label']}.")
+        conseils.append(
+            f"Change le code en {suggested} (adapté à {km} km — {TARIFS[suggested]['label']}). "
+            f"Sinon la CPAM peut refuser la facture."
+        )
+        return {
+            "ok": False,
+            "compatible": False,
+            "message": "Risque de refus CPAM",
+            "montant": None,
+            "montant_calcule": None,
+            "alertes": alertes,
+            "conseil": conseils[0],
+            "code_suggere": suggested,
+            "ia": "anti-rejet",
+        }
+
+    montant = round(regle["base"] + (km * regle["km"]), 2)
+    conseils.append(
+        f"Code {code} cohérent avec {km} km. Montant estimé {montant} €. "
+        f"Tu peux valider et exporter."
+    )
+    return {
+        "ok": True,
+        "compatible": True,
+        "message": "Course conforme",
+        "montant": montant,
+        "montant_calcule": montant,
+        "alertes": [],
+        "conseil": conseils[0],
+        "code_suggere": code,
+        "ia": "anti-rejet",
+    }
+
+
 @app.get("/")
 def root():
-    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs"}
+    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.1.0"}
 
 
 @app.get("/health")
@@ -86,41 +173,14 @@ def verify_course(course_id: str):
     code = course["code_transport"]
     km = float(course["kilometrage"])
 
-    if code not in TARIFS:
-        return {
-            "ok": False,
-            "compatible": False,
-            "message": "Code transport invalide",
-            "montant": None,
-            "montant_calcule": None,
-            "alertes": ["Code transport invalide"],
-        }
+    result = build_advice(code, km, ok=True)
 
-    regle = TARIFS[code]
-    if code != "T5" and not (regle["min"] <= km <= regle["max"]):
-        msg = f"Code {code} incompatible avec {km} km"
-        return {
-            "ok": False,
-            "compatible": False,
-            "message": msg,
-            "montant": None,
-            "montant_calcule": None,
-            "alertes": [msg],
-        }
+    if result["ok"]:
+        course["montant"] = result["montant"]
+        course["montant_total"] = result["montant"]
+        course["statut"] = "verifie"
 
-    montant = round(regle["base"] + (km * regle["km"]), 2)
-    course["montant"] = montant
-    course["montant_total"] = montant
-    course["statut"] = "verifie"
-
-    return {
-        "ok": True,
-        "compatible": True,
-        "message": "Course conforme",
-        "montant": montant,
-        "montant_calcule": montant,
-        "alertes": [],
-    }
+    return result
 
 
 def _generate_invoice(course_id: str):
