@@ -86,31 +86,31 @@ h2{font-size:18px;margin-bottom:12px}
 <div id="tab-history" class="hidden"><h2>📋 Toutes les courses</h2><div id="history-list"></div></div>
 <div id="tab-alerts" class="hidden">
 <h2>🔔 Veille réglementaire</h2>
-<button class="btn btn-secondary" onclick="refreshAlerts()" id="btn-refresh-alerts">Actualiser le scraping</button>
+<button class="btn btn-secondary" onclick="refreshAlerts()" id="btn-refresh-alerts">Actualiser</button>
 <div id="alerts-list"></div>
 </div>
 <div id="tab-stats" class="hidden">
 <h2>📈 Statistiques</h2>
 <div class="stats stats-2">
-<div class="stat-card"><div class="stat-number" id="stats-total-courses">0</div><div class="stat-label">Total courses</div></div>
-<div class="stat-card"><div class="stat-number green" id="stats-total-ca">0 €</div><div class="stat-label">CA total</div></div>
+<div class="stat-card"><div class="stat-number" id="stats-total-courses">0</div><div class="stat-label">Total</div></div>
+<div class="stat-card"><div class="stat-number green" id="stats-total-ca">0 €</div><div class="stat-label">CA</div></div>
 <div class="stat-card"><div class="stat-number" id="stats-avg-price">0 €</div><div class="stat-label">Moyenne</div></div>
-<div class="stat-card"><div class="stat-number" id="stats-max-price">0 €</div><div class="stat-label">Course max</div></div>
+<div class="stat-card"><div class="stat-number" id="stats-max-price">0 €</div><div class="stat-label">Max</div></div>
 </div>
 </div>
 <div id="tab-new" class="hidden">
-<button class="back-btn" onclick="showTab('dashboard')">← Accueil</button>
+<button class="back-btn" onclick="saveDraft();showTab('dashboard')">← Accueil</button>
 <h2>Nouvelle course</h2>
 <button class="scan-btn" onclick="simulateScan()">📷 SCANNER CARTE VITALE<br><span style="font-weight:400;font-size:12px;color:#64748b">Simulation</span></button>
-<div class="input-group"><label>Nom patient *</label><input id="patient_nom" placeholder="DUPONT"></div>
-<div class="input-group"><label>Prénom *</label><input id="patient_prenom" placeholder="Jean"></div>
-<div class="input-group"><label>N° Sécurité Sociale *</label><input id="patient_num_ss" placeholder="185037512345678" inputmode="numeric"></div>
-<div class="input-group"><label>Adresse patient</label><input id="patient_adresse" placeholder="12 rue de la République"></div>
-<div class="input-group"><label>Date course *</label><input id="course_date" type="date"></div>
-<div class="input-group"><label>Départ *</label><input id="lieu_depart" placeholder="Adresse de prise en charge"></div>
-<div class="input-group"><label>Arrivée *</label><input id="lieu_arrivee" placeholder="Destination"></div>
-<div class="input-group"><label>Kilométrage *</label><input id="kilometrage" placeholder="42.5" type="number" step="0.1" inputmode="decimal"></div>
-<div class="check-row"><input type="checkbox" id="ordonnance_ok"><label for="ordonnance_ok">Ordonnance / prescription médicale présente</label></div>
+<div class="input-group"><label>Nom patient *</label><input id="patient_nom" placeholder="DUPONT" oninput="saveDraft()"></div>
+<div class="input-group"><label>Prénom *</label><input id="patient_prenom" placeholder="Jean" oninput="saveDraft()"></div>
+<div class="input-group"><label>N° Sécu *</label><input id="patient_num_ss" placeholder="185037512345678" inputmode="numeric" oninput="saveDraft()"></div>
+<div class="input-group"><label>Adresse</label><input id="patient_adresse" placeholder="12 rue de la République" oninput="saveDraft()"></div>
+<div class="input-group"><label>Date *</label><input id="course_date" type="date" onchange="saveDraft()"></div>
+<div class="input-group"><label>Départ *</label><input id="lieu_depart" placeholder="Prise en charge" oninput="saveDraft()"></div>
+<div class="input-group"><label>Arrivée *</label><input id="lieu_arrivee" placeholder="Destination" oninput="saveDraft()"></div>
+<div class="input-group"><label>Km *</label><input id="kilometrage" placeholder="42.5" type="number" step="0.1" inputmode="decimal" oninput="saveDraft()"></div>
+<div class="check-row"><input type="checkbox" id="ordonnance_ok" onchange="saveDraft()"><label for="ordonnance_ok">Ordonnance présente</label></div>
 <div class="input-group"><label>Code transport *</label>
 <div class="radio-group" id="code-group">
 <button type="button" data-code="T1" class="active" onclick="selectCode('T1')">T1</button>
@@ -119,7 +119,7 @@ h2{font-size:18px;margin-bottom:12px}
 <button type="button" data-code="T4" onclick="selectCode('T4')">T4</button>
 <button type="button" data-code="T5" onclick="selectCode('T5')">T5</button>
 </div>
-<p class="hint">T1: 0–50 · T2: 50–100 · T3: 100–200 · T4: 200+ · T5: Paris</p>
+<p class="hint">T1 0–50 · T2 50–100 · T3 100–200 · T4 200+ · T5 Paris</p>
 </div>
 <button class="btn" id="btn-verify" onclick="createCourse()">VÉRIFIER LA COURSE</button>
 <div id="course-error" class="error-box hidden"></div>
@@ -132,167 +132,273 @@ h2{font-size:18px;margin-bottom:12px}
 <div class="amount" id="result-amount">—</div>
 <div class="detail" id="result-detail"></div>
 <div id="result-alerts"></div>
-<button class="btn btn-success" id="btn-generate" onclick="generateInvoice()">VALIDER ET EXPORTER (PDF + XML)</button>
+<button class="btn btn-success" id="btn-generate" onclick="generateInvoice()">VALIDER ET EXPORTER (XML)</button>
 <button class="btn btn-secondary" onclick="showTab('dashboard')">RETOUR ACCUEIL</button>
 </div>
 </div>
 </div>
 <script>
 const API_URLS=['https://taxi-app-k6u3.onrender.com'];
-let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[];
+let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[],lastXml='';
+
+function saveDraft(){
+  const d={
+    patient_nom:document.getElementById('patient_nom').value,
+    patient_prenom:document.getElementById('patient_prenom').value,
+    patient_num_ss:document.getElementById('patient_num_ss').value,
+    patient_adresse:document.getElementById('patient_adresse').value,
+    date:document.getElementById('course_date').value,
+    lieu_depart:document.getElementById('lieu_depart').value,
+    lieu_arrivee:document.getElementById('lieu_arrivee').value,
+    kilometrage:document.getElementById('kilometrage').value,
+    ordonnance_ok:document.getElementById('ordonnance_ok').checked,
+    code_transport:selectedCode
+  };
+  try{localStorage.setItem('taxicpam_draft',JSON.stringify(d));}catch(e){}
+  lastFormData=d;
+}
+function loadDraft(){
+  try{
+    const raw=localStorage.getItem('taxicpam_draft');
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    fillForm(d);
+  }catch(e){}
+}
+function clearDraft(){try{localStorage.removeItem('taxicpam_draft');}catch(e){}}
+
+function downloadText(filename,text){
+  const blob=new Blob([text],{type:'application/xml'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 async function fetchAPI(endpoint,method='GET',body=null){
-const options={method,headers:{'Content-Type':'application/json'}};
-if(body)options.body=JSON.stringify(body);
-let lastError;
-for(const base of API_URLS){
-try{
-const res=await fetch(base+endpoint,options);
-if(!res.ok){const text=await res.text().catch(()=>'');throw new Error('HTTP '+res.status+': '+(text||res.statusText));}
-API_URL=base;const ct=res.headers.get('content-type')||'';
-if(ct.includes('application/json'))return res.json();return{};
-}catch(e){lastError=e;}
+  const options={method,headers:{'Content-Type':'application/json'}};
+  if(body)options.body=JSON.stringify(body);
+  let lastError;
+  for(const base of API_URLS){
+    try{
+      const res=await fetch(base+endpoint,options);
+      if(!res.ok){const text=await res.text().catch(()=>'');throw new Error('HTTP '+res.status+': '+(text||res.statusText));}
+      API_URL=base;
+      const ct=res.headers.get('content-type')||'';
+      if(ct.includes('application/json'))return res.json();
+      return{};
+    }catch(e){lastError=e;}
+  }
+  throw lastError||new Error('API inaccessible');
 }
-throw lastError||new Error('API inaccessible');
-}
+
 function showTab(tabId){
-document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
-const t=document.getElementById('tab-'+tabId);if(t)t.classList.remove('hidden');
-document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabId));
-document.getElementById('main-nav').style.display=(tabId==='new'||tabId==='result')?'none':'flex';
-if(tabId==='dashboard'){testAPI();loadDashboard();}if(tabId==='history')loadHistory();if(tabId==='stats')loadStats();if(tabId==='alerts')loadAlerts();
+  document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
+  const t=document.getElementById('tab-'+tabId);if(t)t.classList.remove('hidden');
+  document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabId));
+  document.getElementById('main-nav').style.display=(tabId==='new'||tabId==='result')?'none':'flex';
+  if(tabId==='dashboard'){testAPI();loadDashboard();}
+  if(tabId==='history')loadHistory();
+  if(tabId==='stats')loadStats();
+  if(tabId==='alerts')loadAlerts();
+  if(tabId==='new')loadDraft();
 }
-function selectCode(code){selectedCode=code;document.querySelectorAll('#code-group button').forEach(b=>b.classList.toggle('active',b.dataset.code===code));}
-function fillForm(d){if(!d)return;
-document.getElementById('patient_nom').value=d.patient_nom||'';
-document.getElementById('patient_prenom').value=d.patient_prenom||'';
-document.getElementById('patient_num_ss').value=d.patient_num_ss||'';
-document.getElementById('patient_adresse').value=d.patient_adresse||'';
-document.getElementById('course_date').value=d.date||'';
-document.getElementById('lieu_depart').value=d.lieu_depart||'';
-document.getElementById('lieu_arrivee').value=d.lieu_arrivee||'';
-document.getElementById('kilometrage').value=d.kilometrage||'';
-document.getElementById('ordonnance_ok').checked=!!d.ordonnance_ok;
-if(d.code_transport)selectCode(d.code_transport);}
+
+function selectCode(code){selectedCode=code;document.querySelectorAll('#code-group button').forEach(b=>b.classList.toggle('active',b.dataset.code===code));saveDraft();}
+
+function fillForm(d){
+  if(!d)return;
+  document.getElementById('patient_nom').value=d.patient_nom||'';
+  document.getElementById('patient_prenom').value=d.patient_prenom||'';
+  document.getElementById('patient_num_ss').value=d.patient_num_ss||'';
+  document.getElementById('patient_adresse').value=d.patient_adresse||'';
+  document.getElementById('course_date').value=d.date||'';
+  document.getElementById('lieu_depart').value=d.lieu_depart||'';
+  document.getElementById('lieu_arrivee').value=d.lieu_arrivee||'';
+  document.getElementById('kilometrage').value=d.kilometrage||'';
+  document.getElementById('ordonnance_ok').checked=!!d.ordonnance_ok;
+  if(d.code_transport)selectCode(d.code_transport);
+}
 function backToForm(){fillForm(lastFormData);showTab('new');}
+
 function simulateScan(){
-document.getElementById('patient_nom').value='DUPONT';
-document.getElementById('patient_prenom').value='Jean';
-document.getElementById('patient_num_ss').value='185037512345678';
-document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
-document.getElementById('ordonnance_ok').checked=true;alert('Scan réussi');
+  document.getElementById('patient_nom').value='DUPONT';
+  document.getElementById('patient_prenom').value='Jean';
+  document.getElementById('patient_num_ss').value='185037512345678';
+  document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
+  document.getElementById('ordonnance_ok').checked=true;
+  saveDraft();
+  alert('Scan réussi (simulation)');
 }
+
 function formatCourseCard(c){
-const montant=c.montant_total!=null?parseFloat(c.montant_total).toFixed(2)+' €':'—';
-const statut=c.statut||'brouillon';
-const badge=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
-let actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button>';
-if(statut==='brouillon')actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button>';
-actions+='</div>';
-return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badge+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
+  const montant=c.montant_total!=null?parseFloat(c.montant_total).toFixed(2)+' €':'—';
+  const statut=c.statut||'brouillon';
+  const badge=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
+  let actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
+  if(statut==='brouillon'){
+    actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
+  }
+  return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badge+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
 }
+
 async function editCourse(id){
-try{let c=coursesCache.find(x=>x.id===id)||await fetchAPI('/courses/'+id);
-lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
-currentCourseId=c.id;fillForm(lastFormData);showTab('new');
-}catch(e){alert(e.message);}
+  try{
+    let c=coursesCache.find(x=>x.id===id)||await fetchAPI('/courses/'+id);
+    lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
+    currentCourseId=c.id;fillForm(lastFormData);saveDraft();showTab('new');
+  }catch(e){alert(e.message);}
 }
 async function deleteCourse(id){
-if(!confirm('Supprimer ?'))return;
-try{await fetchAPI('/courses/'+id,'DELETE');alert('Supprimée');loadDashboard();loadHistory();}catch(e){alert(e.message);}
+  if(!confirm('Supprimer ?'))return;
+  try{await fetchAPI('/courses/'+id,'DELETE');loadDashboard();loadHistory();}catch(e){alert(e.message);}
 }
+
 function localChecks(data){
-const a=[];const ss=(data.patient_num_ss||'').replace(/\s/g,'');
-if(!ss||ss.length<13||!/^\d+$/.test(ss))a.push('N° Sécu invalide — risque rejet CPAM.');
-if(!data.lieu_depart||data.lieu_depart.length<3)a.push('Départ manquant.');
-if(!data.lieu_arrivee||data.lieu_arrivee.length<3)a.push('Arrivée manquante.');
-if(!data.date)a.push('Date manquante.');
-else{const d=new Date(data.date);const t=new Date();t.setHours(23,59,59,999);if(d>t)a.push('Date dans le futur.');}
-if(!data.ordonnance_ok)a.push('Prescription non confirmée — refus fréquent CPAM.');
-if(!data.kilometrage||data.kilometrage<=0)a.push('Km invalide.');
-return a;
+  const a=[];const ss=(data.patient_num_ss||'').replace(/\s/g,'');
+  if(!ss||ss.length<13||!/^\d+$/.test(ss))a.push('N° Sécu invalide — risque rejet CPAM.');
+  if(!data.lieu_depart||data.lieu_depart.length<3)a.push('Départ manquant.');
+  if(!data.lieu_arrivee||data.lieu_arrivee.length<3)a.push('Arrivée manquante.');
+  if(!data.date)a.push('Date manquante.');
+  else{const d=new Date(data.date);const t=new Date();t.setHours(23,59,59,999);if(d>t)a.push('Date dans le futur.');}
+  if(!data.ordonnance_ok)a.push('Prescription non confirmée — refus fréquent CPAM.');
+  if(!data.kilometrage||data.kilometrage<=0)a.push('Km invalide.');
+  return a;
 }
+
 async function testAPI(){
-const s=document.getElementById('api-status');const b=document.getElementById('api-badge');
-s.innerHTML='<div class="info-box">⏳ Connexion…</div>';
-try{await fetchAPI('/courses');s.innerHTML='<div class="error-box success-box">✅ API connectée</div>';b.textContent='🟢 En ligne';b.style.color='#4ade80';}
-catch(e){s.innerHTML='<div class="error-box">❌ '+e.message+'</div>';b.textContent='⚪ Hors ligne';}
+  const s=document.getElementById('api-status');const b=document.getElementById('api-badge');
+  s.innerHTML='<div class="info-box">⏳ Connexion API (peut prendre 30–50s si endormie)…</div>';
+  try{
+    await fetchAPI('/courses');
+    s.innerHTML='<div class="error-box success-box">✅ API connectée</div>';
+    b.textContent='🟢 En ligne';b.style.color='#4ade80';
+  }catch(e){
+    s.innerHTML='<div class="error-box">❌ API inaccessible. Ouvre <a href="https://taxi-app-k6u3.onrender.com" style="color:#38bdf8" target="_blank">l\'API</a> pour la réveiller, attends 40s, puis recharge.</div>';
+    b.textContent='⚪ Hors ligne';
+  }
 }
+
 async function loadDashboard(){
-try{const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
-document.getElementById('stats-courses').textContent=coursesCache.length;
-const total=coursesCache.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
-document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';
-document.getElementById('stats-avg').textContent=coursesCache.length?(total/coursesCache.length).toFixed(0)+' €':'0 €';
-document.getElementById('recent-list').innerHTML=coursesCache.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
-}catch(e){console.error(e);}
+  try{
+    const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
+    document.getElementById('stats-courses').textContent=coursesCache.length;
+    const total=coursesCache.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+    document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';
+    document.getElementById('stats-avg').textContent=coursesCache.length?(total/coursesCache.length).toFixed(0)+' €':'0 €';
+    document.getElementById('recent-list').innerHTML=coursesCache.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
+  }catch(e){}
 }
 async function loadHistory(){
-const el=document.getElementById('history-list');el.innerHTML='<div class="loading">…</div>';
-try{const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
-el.innerHTML=coursesCache.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune</div></div>';
-}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
+  const el=document.getElementById('history-list');el.innerHTML='<div class="loading">…</div>';
+  try{
+    const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
+    el.innerHTML=coursesCache.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune</div></div>';
+  }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
 async function loadAlerts(){
-const el=document.getElementById('alerts-list');el.innerHTML='<div class="loading">…</div>';
-try{const list=await fetchAPI('/alerts')||[];
-if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte</div>';return;}
-el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'')+'</div><div class="body">'+(a.contenu||'')+'</div></div>').join('');
-}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
+  const el=document.getElementById('alerts-list');el.innerHTML='<div class="loading">…</div>';
+  try{
+    const list=await fetchAPI('/alerts')||[];
+    if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte</div>';return;}
+    el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'')+'</div><div class="body">'+(a.contenu||'')+'</div><div class="body" style="margin-top:8px">'+(a.niveau||'')+' · '+(a.categorie||'')+'</div></div>').join('');
+  }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
 async function refreshAlerts(){
-const btn=document.getElementById('btn-refresh-alerts');btn.disabled=true;
-try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,2000);}catch(e){alert(e.message);}
-finally{btn.disabled=false;btn.textContent='Actualiser le scraping';}
+  const btn=document.getElementById('btn-refresh-alerts');btn.disabled=true;
+  try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}catch(e){alert(e.message);}
+  finally{btn.disabled=false;btn.textContent='Actualiser';}
 }
 async function loadStats(){
-try{const list=await fetchAPI('/courses')||[];
-const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
-const max=list.reduce((m,c)=>Math.max(m,parseFloat(c.montant_total)||0),0);
-document.getElementById('stats-total-courses').textContent=list.length;
-document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
-document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
-document.getElementById('stats-max-price').textContent=max.toFixed(2)+' €';
-}catch(e){}
+  try{
+    const list=await fetchAPI('/courses')||[];
+    const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+    const max=list.reduce((m,c)=>Math.max(m,parseFloat(c.montant_total)||0),0);
+    document.getElementById('stats-total-courses').textContent=list.length;
+    document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
+    document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
+    document.getElementById('stats-max-price').textContent=max.toFixed(2)+' €';
+  }catch(e){}
 }
+
 async function createCourse(){
-const errorDiv=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
-errorDiv.classList.add('hidden');
-const data={patient_nom:document.getElementById('patient_nom').value.trim(),patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',patient_num_ss:document.getElementById('patient_num_ss').value.trim(),patient_adresse:document.getElementById('patient_adresse').value.trim()||null,date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),lieu_depart:document.getElementById('lieu_depart').value.trim(),lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,code_transport:selectedCode,ordonnance_ok:document.getElementById('ordonnance_ok').checked};
-if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){errorDiv.textContent='Champs obligatoires manquants';errorDiv.classList.remove('hidden');return;}
-lastFormData=data;btn.disabled=true;btn.textContent='Vérification…';
-try{
-const localAlertes=localChecks(data);
-const course=await fetchAPI('/courses','POST',{patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,kilometrage:data.kilometrage,code_transport:data.code_transport});
-currentCourseId=course.id;
-const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
-const apiOk=result.compatible===true||result.ok===true;
-const alertes=localAlertes.concat(result.alertes||[]);const ok=apiOk&&localAlertes.length===0;
-const montant=result.montant_calcule??result.montant??null;const conseil=result.conseil||'';const codeSuggere=result.code_suggere||'';
-let message=ok?'Course conforme':(result.message||'Risque de refus CPAM');
-if(!ok&&localAlertes.length&&apiOk)message='Dossier incomplet';
-document.getElementById('result-status').textContent=ok?'✅':'⚠️';
-document.getElementById('result-message').textContent=message;
-document.getElementById('result-amount').textContent=(ok&&montant!=null)?parseFloat(montant).toFixed(2)+' €':'—';
-document.getElementById('result-detail').textContent='Code '+selectedCode+' · '+data.kilometrage+' km';
-let html='';
-if(alertes.length)html+='<div class="error-box">'+alertes.map(x=>'• '+x).join('<br>')+'</div>';
-if(conseil){html+='<div class="info-box"><b>💡 Conseil anti-rejet</b><br>'+conseil;if(codeSuggere&&!apiOk)html+='<br><br>Code : <b>'+codeSuggere+'</b>';html+='</div>';}
-if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
-document.getElementById('result-alerts').innerHTML=html;
-document.getElementById('btn-generate').style.display=ok?'block':'none';showTab('result');
-const ba=document.getElementById('btn-apply-code');
-if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(codeSuggere);fillForm(lastFormData);showTab('new');};
-}catch(e){errorDiv.textContent='❌ '+e.message;errorDiv.classList.remove('hidden');}
-finally{btn.disabled=false;btn.textContent='VÉRIFIER LA COURSE';}
+  const errorDiv=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
+  errorDiv.classList.add('hidden');
+  const data={
+    patient_nom:document.getElementById('patient_nom').value.trim(),
+    patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',
+    patient_num_ss:document.getElementById('patient_num_ss').value.trim(),
+    patient_adresse:document.getElementById('patient_adresse').value.trim()||null,
+    date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),
+    lieu_depart:document.getElementById('lieu_depart').value.trim(),
+    lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),
+    kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,
+    code_transport:selectedCode,
+    ordonnance_ok:document.getElementById('ordonnance_ok').checked
+  };
+  if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){
+    errorDiv.textContent='Champs obligatoires manquants';errorDiv.classList.remove('hidden');return;
+  }
+  lastFormData=data;saveDraft();
+  btn.disabled=true;btn.textContent='Vérification…';
+  try{
+    const localAlertes=localChecks(data);
+    const course=await fetchAPI('/courses','POST',{
+      patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,
+      patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,
+      date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,
+      kilometrage:data.kilometrage,code_transport:data.code_transport
+    });
+    currentCourseId=course.id;
+    const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
+    const apiOk=result.compatible===true||result.ok===true;
+    const alertes=localAlertes.concat(result.alertes||[]);const ok=apiOk&&localAlertes.length===0;
+    const montant=result.montant_calcule??result.montant??null;const conseil=result.conseil||'';const codeSuggere=result.code_suggere||'';
+    let message=ok?'Course conforme':(result.message||'Risque de refus CPAM');
+    if(!ok&&localAlertes.length&&apiOk)message='Dossier incomplet';
+    document.getElementById('result-status').textContent=ok?'✅':'⚠️';
+    document.getElementById('result-message').textContent=message;
+    document.getElementById('result-amount').textContent=(ok&&montant!=null)?parseFloat(montant).toFixed(2)+' €':'—';
+    document.getElementById('result-detail').textContent='Code '+selectedCode+' · '+data.kilometrage+' km';
+    let html='';
+    if(alertes.length)html+='<div class="error-box">'+alertes.map(x=>'• '+x).join('<br>')+'</div>';
+    if(conseil){html+='<div class="info-box"><b>💡 Conseil anti-rejet</b><br>'+conseil;if(codeSuggere&&!apiOk)html+='<br><br>Code : <b>'+codeSuggere+'</b>';html+='</div>';}
+    if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
+    document.getElementById('result-alerts').innerHTML=html;
+    document.getElementById('btn-generate').style.display=ok?'block':'none';
+    showTab('result');
+    const ba=document.getElementById('btn-apply-code');
+    if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(codeSuggere);fillForm(lastFormData);saveDraft();showTab('new');};
+  }catch(e){
+    errorDiv.textContent='❌ '+e.message;errorDiv.classList.remove('hidden');
+  }finally{btn.disabled=false;btn.textContent='VÉRIFIER LA COURSE';}
 }
+
 async function generateInvoice(){
-if(!currentCourseId)return;const btn=document.getElementById('btn-generate');btn.disabled=true;
-try{await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');alert('✅ Facture générée');showTab('dashboard');}
-catch(e){try{await fetchAPI('/courses/'+currentCourseId+'/generate','POST');alert('✅ Facture');showTab('dashboard');}catch(e2){alert(e.message);}}
-finally{btn.disabled=false;btn.textContent='VALIDER ET EXPORTER (PDF + XML)';}
+  if(!currentCourseId)return;
+  const btn=document.getElementById('btn-generate');btn.disabled=true;btn.textContent='Export…';
+  try{
+    const data=await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');
+    lastXml=data.xml||'';
+    if(lastXml)downloadText('facture-'+currentCourseId.slice(0,8)+'.xml',lastXml);
+    clearDraft();
+    alert('✅ Facture exportée (fichier XML téléchargé)');
+    showTab('dashboard');
+  }catch(e){
+    try{
+      const data=await fetchAPI('/courses/'+currentCourseId+'/generate','POST');
+      if(data.xml)downloadText('facture.xml',data.xml);
+      clearDraft();alert('✅ Facture exportée');showTab('dashboard');
+    }catch(e2){alert(e.message);}
+  }finally{btn.disabled=false;btn.textContent='VALIDER ET EXPORTER (XML)';}
 }
+
 document.addEventListener('DOMContentLoaded',()=>{
-document.getElementById('course_date').value=new Date().toISOString().slice(0,10);testAPI();loadDashboard();
+  document.getElementById('course_date').value=new Date().toISOString().slice(0,10);
+  loadDraft();
+  testAPI();
+  loadDashboard();
 });
 </script>
 </body>
