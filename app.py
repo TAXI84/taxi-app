@@ -6,7 +6,7 @@ from typing import Optional, List
 import uuid
 import os
 
-app = FastAPI(title="TaxiCPAM", version="1.2.0")
+app = FastAPI(title="TaxiCPAM", version="1.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,7 +17,37 @@ app.add_middleware(
 )
 
 courses_db = {}
-alerts_db = []
+
+# Alertes veille (contenu type national transport sanitaire / CPAM)
+alerts_db = [
+    {
+        "id": str(uuid.uuid4()),
+        "titre": "Prescription médicale de transport obligatoire",
+        "contenu": "Toute facturation CPAM de transport assis (taxi conventionné) exige une prescription médicale de transport valide. Sans ordonnance, le dossier est refusé.",
+        "categorie": "facturation",
+        "date_application": "2024-01-01",
+        "niveau": "national",
+        "lu": False,
+    },
+    {
+        "id": str(uuid.uuid4()),
+        "titre": "Codes transport et distance",
+        "contenu": "Le code de transport doit correspondre à la distance réelle. Un écart code / km est un motif classique de rejet ou de contrôle CPAM. Vérifie avant envoi NOEMIE.",
+        "categorie": "conformité",
+        "date_application": "2024-01-01",
+        "niveau": "national",
+        "lu": False,
+    },
+    {
+        "id": str(uuid.uuid4()),
+        "titre": "Identité patient (NIR) complète",
+        "contenu": "Le numéro de sécurité sociale (NIR) doit être exact et complet. NIR manquant ou erroné = rejet fréquent à la liquidation.",
+        "categorie": "dossier",
+        "date_application": "2024-01-01",
+        "niveau": "national",
+        "lu": False,
+    },
+]
 
 TARIFS = {
     "T1": {"min": 0, "max": 50, "base": 25.0, "km": 1.20, "label": "0 à 50 km"},
@@ -52,7 +82,6 @@ def suggest_code(km: float) -> str:
 
 def build_advice(code: str, km: float) -> dict:
     suggested = suggest_code(km)
-    alertes: List[str] = []
 
     if code not in TARIFS:
         return {
@@ -118,7 +147,7 @@ def build_advice(code: str, km: float) -> dict:
 
 @app.get("/")
 def root():
-    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.2.0"}
+    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.3.0"}
 
 
 @app.get("/health")
@@ -174,9 +203,7 @@ def verify_course(course_id: str):
         raise HTTPException(status_code=404, detail="Course non trouvée")
 
     course = courses_db[course_id]
-    code = course["code_transport"]
-    km = float(course["kilometrage"])
-    result = build_advice(code, km)
+    result = build_advice(course["code_transport"], float(course["kilometrage"]))
 
     if result["ok"]:
         course["montant"] = result["montant"]
@@ -233,14 +260,14 @@ def list_alerts():
 def refresh_alerts():
     alerts_db.append({
         "id": str(uuid.uuid4()),
-        "titre": "Veille réglementaire — mise à jour",
-        "contenu": "Scraping simulé. Aucun changement critique détecté.",
-        "categorie": "obligations",
+        "titre": "Rappel : contrôles CPAM sur les transports",
+        "contenu": "Les dossiers incomplets (ordonnance, NIR, cohérence code/km) sont prioritaires en contrôle. Vérifie chaque course avant envoi.",
+        "categorie": "contrôle",
         "date_application": date.today().isoformat(),
         "niveau": "national",
         "lu": False,
     })
-    return {"status": "scraping lancé", "count": len(alerts_db)}
+    return {"status": "ok", "count": len(alerts_db)}
 
 
 if __name__ == "__main__":
