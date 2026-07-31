@@ -60,7 +60,7 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,-apple-system,sans-s
 .hint{color:#64748b;font-size:12px;margin-top:8px}
 h2{font-size:18px;margin-bottom:12px}
 .section-title{color:#94a3b8;font-size:13px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.4px}
-#xml-box{display:none;margin-top:12px;text-align:left;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;font-size:11px;color:#94a3b8;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto}
+#xml-box{display:none;margin-top:12px;text-align:left;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;font-size:11px;color:#94a3b8;white-space:pre-wrap;word-break:break-all;max-height:180px;overflow:auto}
 </style>
 </head>
 <body>
@@ -155,18 +155,20 @@ function buildXml(){
   const d=lastFormData||{};
   const id=currentCourseId||'local';
   const montant=lastMontant!=null?lastMontant:'';
-  return '<?xml version="1.0" encoding="UTF-8"?>\n'+'
-'<NOEMIE version="B2">\n'+'
-'  <IDENTIFIANT>'+id+'</IDENTIFIANT>\n'+'
-'  <CODE_TRANSPORT>'+(d.code_transport||selectedCode||'')+'</CODE_TRANSPORT>\n'+'
-'  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>\n'+'
-'  <MONTANT>'+montant+'</MONTANT>\n'+'
-'  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>\n'+'
-'  <NIR>'+(d.patient_num_ss||'')+'</NIR>\n'+'
-'  <DATE>'+(d.date||'')+'</DATE>\n'+'
-'  <DEPART>'+(d.lieu_depart||'')+'</DEPART>\n'+'
-'  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>\n'+'
-'</NOEMIE>\n';
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<NOEMIE version="B2">',
+    '  <IDENTIFIANT>'+id+'</IDENTIFIANT>',
+    '  <CODE_TRANSPORT>'+(d.code_transport||selectedCode||'')+'</CODE_TRANSPORT>',
+    '  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>',
+    '  <MONTANT>'+montant+'</MONTANT>',
+    '  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>',
+    '  <NIR>'+(d.patient_num_ss||'')+'</NIR>',
+    '  <DATE>'+(d.date||'')+'</DATE>',
+    '  <DEPART>'+(d.lieu_depart||'')+'</DEPART>',
+    '  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>',
+    '</NOEMIE>'
+  ].join('\n');
 }
 
 function downloadText(filename,text){
@@ -174,12 +176,9 @@ function downloadText(filename,text){
     const blob=new Blob([text],{type:'application/xml;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;
-    a.download=filename;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+    a.href=url;a.download=filename;a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},400);
     return true;
   }catch(e){return false;}
 }
@@ -349,31 +348,21 @@ async function createCourse(){
 async function generateInvoice(){
   const btn=document.getElementById('btn-generate');
   btn.disabled=true;btn.textContent='Export…';
-  // Toujours générer le XML en local (ne dépend pas du navigateur / API)
   const xml=buildXml();
   const name='facture-'+(currentCourseId?currentCourseId.slice(0,8):'local')+'.xml';
-  // Essai API (statut paye)
   try{
     if(currentCourseId){
-      const data=await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');
-      if(data&&data.xml){
-        /* prefer server xml if present */
-      }
+      try{await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');}
+      catch(e){try{await fetchAPI('/courses/'+currentCourseId+'/generate','POST');}catch(e2){}}
     }
-  }catch(e){
-    try{if(currentCourseId)await fetchAPI('/courses/'+currentCourseId+'/generate','POST');}catch(e2){}
-  }
-  const ok=downloadText(name,xml);
+  }catch(e){}
+  downloadText(name,xml);
   const box=document.getElementById('xml-box');
   box.style.display='block';
   box.textContent=xml;
   clearDraft();
   btn.disabled=false;btn.textContent='VALIDER ET EXPORTER XML';
-  if(ok){
-    alert('✅ XML prêt.\n\n1) Fichier téléchargé : '+name+'\n2) Ou copie le XML affiché sous le bouton.');
-  }else{
-    alert('✅ XML affiché sous le bouton.\nCopie-le dans un fichier .xml');
-  }
+  alert('✅ XML généré.\n\n- Fichier : '+name+' (dossier Téléchargements)\n- Ou copie le texte affiché sous le bouton');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
