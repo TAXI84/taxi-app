@@ -1,24 +1,31 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from datetime import date
-from typing import Optional, List
+from typing import Optional
 import uuid
+import os
 
 app = FastAPI(title="TaxiCPAM", version="1.0.0")
 
-# ========== CORS (OBLIGATOIRE pour HTML local / file:// / localhost) ==========
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # dev : toutes origines (localhost, file://, GitHub Pages…)
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Base de données en mémoire (perdue au redémarrage Render free)
 courses_db = {}
 alerts_db = []
+
+TARIFS = {
+    "T1": {"min": 0, "max": 50, "base": 25.0, "km": 1.20},
+    "T2": {"min": 50, "max": 100, "base": 45.0, "km": 1.10},
+    "T3": {"min": 100, "max": 200, "base": 80.0, "km": 1.00},
+    "T4": {"min": 200, "max": 9999, "base": 120.0, "km": 0.90},
+    "T5": {"min": 0, "max": 9999, "base": 35.0, "km": 1.50},
+}
 
 
 class CourseCreate(BaseModel):
@@ -30,16 +37,7 @@ class CourseCreate(BaseModel):
     lieu_depart: str
     lieu_arrivee: str
     kilometrage: float
-    code_transport: str  # T1..T5
-
-
-TARIFS = {
-    "T1": {"min": 0, "max": 50, "base": 25.0, "km": 1.20},
-    "T2": {"min": 50, "max": 100, "base": 45.0, "km": 1.10},
-    "T3": {"min": 100, "max": 200, "base": 80.0, "km": 1.00},
-    "T4": {"min": 200, "max": 9999, "base": 120.0, "km": 0.90},
-    "T5": {"min": 0, "max": 9999, "base": 35.0, "km": 1.50},
-}
+    code_transport: str
 
 
 @app.get("/")
@@ -68,7 +66,7 @@ def create_course(data: CourseCreate):
         "code_transport": data.code_transport.upper(),
         "statut": "brouillon",
         "montant": None,
-        "montant_total": None,  # alias pour le front
+        "montant_total": None,
     }
     courses_db[course_id] = course
     return course
@@ -76,7 +74,6 @@ def create_course(data: CourseCreate):
 
 @app.get("/courses")
 def list_courses():
-    # plus récentes en premier
     return list(reversed(list(courses_db.values())))
 
 
@@ -100,7 +97,6 @@ def verify_course(course_id: str):
         }
 
     regle = TARIFS[code]
-    # T5 (Paris) : pas de contrainte km stricte
     if code != "T5" and not (regle["min"] <= km <= regle["max"]):
         msg = f"Code {code} incompatible avec {km} km"
         return {
@@ -127,9 +123,7 @@ def verify_course(course_id: str):
     }
 
 
-@app.post("/courses/{course_id}/generate-invoice")
-@app.post("/courses/{course_id}/generate")  # alias DeepSeek
-def generate_invoice(course_id: str):
+def _generate_invoice(course_id: str):
     if course_id not in courses_db:
         raise HTTPException(status_code=404, detail="Course non trouvée")
 
@@ -148,7 +142,6 @@ def generate_invoice(course_id: str):
         f"</NOEMIE>"
     )
     course["facture_xml"] = xml
-
     return {
         "message": "Facture générée",
         "patient": f"{course['patient_prenom']} {course['patient_nom']}",
@@ -156,6 +149,16 @@ def generate_invoice(course_id: str):
         "pdf_url": f"/fake-pdf/{course_id}.pdf",
         "xml": xml,
     }
+
+
+@app.post("/courses/{course_id}/generate-invoice")
+def generate_invoice(course_id: str):
+    return _generate_invoice(course_id)
+
+
+@app.post("/courses/{course_id}/generate")
+def generate_invoice_alias(course_id: str):
+    return _generate_invoice(course_id)
 
 
 @app.get("/alerts")
@@ -168,10 +171,16 @@ def refresh_alerts():
     alerts_db.append({
         "id": str(uuid.uuid4()),
         "titre": "Veille réglementaire — mise à jour",
-        "contenu": "Scraping simulé exécuté (Légifrance / FNTI). Aucun changement critique détecté.",
+        "contenu": "Scraping simulé exécuté. Aucun changement critique détecté.",
         "categorie": "obligations",
         "date_application": date.today().isoformat(),
         "niveau": "national",
         "lu": False,
     })
     return {"status": "scraping lancé", "count": len(alerts_db)}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
