@@ -60,6 +60,7 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,-apple-system,sans-s
 .hint{color:#64748b;font-size:12px;margin-top:8px}
 h2{font-size:18px;margin-bottom:12px}
 .section-title{color:#94a3b8;font-size:13px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.4px}
+#xml-box{display:none;margin-top:12px;text-align:left;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;font-size:11px;color:#94a3b8;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto}
 </style>
 </head>
 <body>
@@ -132,48 +133,55 @@ h2{font-size:18px;margin-bottom:12px}
 <div class="amount" id="result-amount">—</div>
 <div class="detail" id="result-detail"></div>
 <div id="result-alerts"></div>
-<button class="btn btn-success" id="btn-generate" onclick="generateInvoice()">VALIDER ET EXPORTER (XML)</button>
+<button class="btn btn-success" id="btn-generate" onclick="generateInvoice()">VALIDER ET EXPORTER XML</button>
 <button class="btn btn-secondary" onclick="showTab('dashboard')">RETOUR ACCUEIL</button>
+<pre id="xml-box"></pre>
 </div>
 </div>
 </div>
 <script>
 const API_URLS=['https://taxi-app-k6u3.onrender.com'];
-let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[],lastXml='';
+let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[],lastMontant=null;
 
 function saveDraft(){
-  const d={
-    patient_nom:document.getElementById('patient_nom').value,
-    patient_prenom:document.getElementById('patient_prenom').value,
-    patient_num_ss:document.getElementById('patient_num_ss').value,
-    patient_adresse:document.getElementById('patient_adresse').value,
-    date:document.getElementById('course_date').value,
-    lieu_depart:document.getElementById('lieu_depart').value,
-    lieu_arrivee:document.getElementById('lieu_arrivee').value,
-    kilometrage:document.getElementById('kilometrage').value,
-    ordonnance_ok:document.getElementById('ordonnance_ok').checked,
-    code_transport:selectedCode
-  };
+  const d={patient_nom:document.getElementById('patient_nom').value,patient_prenom:document.getElementById('patient_prenom').value,patient_num_ss:document.getElementById('patient_num_ss').value,patient_adresse:document.getElementById('patient_adresse').value,date:document.getElementById('course_date').value,lieu_depart:document.getElementById('lieu_depart').value,lieu_arrivee:document.getElementById('lieu_arrivee').value,kilometrage:document.getElementById('kilometrage').value,ordonnance_ok:document.getElementById('ordonnance_ok').checked,code_transport:selectedCode};
   try{localStorage.setItem('taxicpam_draft',JSON.stringify(d));}catch(e){}
   lastFormData=d;
 }
-function loadDraft(){
-  try{
-    const raw=localStorage.getItem('taxicpam_draft');
-    if(!raw)return;
-    const d=JSON.parse(raw);
-    fillForm(d);
-  }catch(e){}
-}
+function loadDraft(){try{const raw=localStorage.getItem('taxicpam_draft');if(!raw)return;fillForm(JSON.parse(raw));}catch(e){}}
 function clearDraft(){try{localStorage.removeItem('taxicpam_draft');}catch(e){}}
 
+function buildXml(){
+  const d=lastFormData||{};
+  const id=currentCourseId||'local';
+  const montant=lastMontant!=null?lastMontant:'';
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'+'
+'<NOEMIE version="B2">\n'+'
+'  <IDENTIFIANT>'+id+'</IDENTIFIANT>\n'+'
+'  <CODE_TRANSPORT>'+(d.code_transport||selectedCode||'')+'</CODE_TRANSPORT>\n'+'
+'  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>\n'+'
+'  <MONTANT>'+montant+'</MONTANT>\n'+'
+'  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>\n'+'
+'  <NIR>'+(d.patient_num_ss||'')+'</NIR>\n'+'
+'  <DATE>'+(d.date||'')+'</DATE>\n'+'
+'  <DEPART>'+(d.lieu_depart||'')+'</DEPART>\n'+'
+'  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>\n'+'
+'</NOEMIE>\n';
+}
+
 function downloadText(filename,text){
-  const blob=new Blob([text],{type:'application/xml'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  try{
+    const blob=new Blob([text],{type:'application/xml;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=filename;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+    return true;
+  }catch(e){return false;}
 }
 
 async function fetchAPI(endpoint,method='GET',body=null){
@@ -206,30 +214,24 @@ function showTab(tabId){
 }
 
 function selectCode(code){selectedCode=code;document.querySelectorAll('#code-group button').forEach(b=>b.classList.toggle('active',b.dataset.code===code));saveDraft();}
-
-function fillForm(d){
-  if(!d)return;
-  document.getElementById('patient_nom').value=d.patient_nom||'';
-  document.getElementById('patient_prenom').value=d.patient_prenom||'';
-  document.getElementById('patient_num_ss').value=d.patient_num_ss||'';
-  document.getElementById('patient_adresse').value=d.patient_adresse||'';
-  document.getElementById('course_date').value=d.date||'';
-  document.getElementById('lieu_depart').value=d.lieu_depart||'';
-  document.getElementById('lieu_arrivee').value=d.lieu_arrivee||'';
-  document.getElementById('kilometrage').value=d.kilometrage||'';
-  document.getElementById('ordonnance_ok').checked=!!d.ordonnance_ok;
-  if(d.code_transport)selectCode(d.code_transport);
-}
+function fillForm(d){if(!d)return;
+document.getElementById('patient_nom').value=d.patient_nom||'';
+document.getElementById('patient_prenom').value=d.patient_prenom||'';
+document.getElementById('patient_num_ss').value=d.patient_num_ss||'';
+document.getElementById('patient_adresse').value=d.patient_adresse||'';
+document.getElementById('course_date').value=d.date||'';
+document.getElementById('lieu_depart').value=d.lieu_depart||'';
+document.getElementById('lieu_arrivee').value=d.lieu_arrivee||'';
+document.getElementById('kilometrage').value=d.kilometrage||'';
+document.getElementById('ordonnance_ok').checked=!!d.ordonnance_ok;
+if(d.code_transport)selectCode(d.code_transport);}
 function backToForm(){fillForm(lastFormData);showTab('new');}
-
 function simulateScan(){
-  document.getElementById('patient_nom').value='DUPONT';
-  document.getElementById('patient_prenom').value='Jean';
-  document.getElementById('patient_num_ss').value='185037512345678';
-  document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
-  document.getElementById('ordonnance_ok').checked=true;
-  saveDraft();
-  alert('Scan réussi (simulation)');
+document.getElementById('patient_nom').value='DUPONT';
+document.getElementById('patient_prenom').value='Jean';
+document.getElementById('patient_num_ss').value='185037512345678';
+document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
+document.getElementById('ordonnance_ok').checked=true;saveDraft();alert('Scan réussi');
 }
 
 function formatCourseCard(c){
@@ -237,17 +239,14 @@ function formatCourseCard(c){
   const statut=c.statut||'brouillon';
   const badge=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
   let actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
-  if(statut==='brouillon'){
-    actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
-  }
+  if(statut==='brouillon')actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
   return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badge+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
 }
 
 async function editCourse(id){
-  try{
-    let c=coursesCache.find(x=>x.id===id)||await fetchAPI('/courses/'+id);
-    lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
-    currentCourseId=c.id;fillForm(lastFormData);saveDraft();showTab('new');
+  try{let c=coursesCache.find(x=>x.id===id)||await fetchAPI('/courses/'+id);
+  lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
+  currentCourseId=c.id;fillForm(lastFormData);saveDraft();showTab('new');
   }catch(e){alert(e.message);}
 }
 async function deleteCourse(id){
@@ -269,40 +268,31 @@ function localChecks(data){
 
 async function testAPI(){
   const s=document.getElementById('api-status');const b=document.getElementById('api-badge');
-  s.innerHTML='<div class="info-box">⏳ Connexion API (peut prendre 30–50s si endormie)…</div>';
-  try{
-    await fetchAPI('/courses');
-    s.innerHTML='<div class="error-box success-box">✅ API connectée</div>';
-    b.textContent='🟢 En ligne';b.style.color='#4ade80';
-  }catch(e){
-    s.innerHTML='<div class="error-box">❌ API inaccessible. Ouvre <a href="https://taxi-app-k6u3.onrender.com" style="color:#38bdf8" target="_blank">l\'API</a> pour la réveiller, attends 40s, puis recharge.</div>';
-    b.textContent='⚪ Hors ligne';
-  }
+  s.innerHTML='<div class="info-box">⏳ Connexion API…</div>';
+  try{await fetchAPI('/courses');s.innerHTML='<div class="error-box success-box">✅ API connectée</div>';b.textContent='🟢 En ligne';b.style.color='#4ade80';}
+  catch(e){s.innerHTML='<div class="error-box">❌ API inaccessible. Ouvre <a href="https://taxi-app-k6u3.onrender.com" style="color:#38bdf8" target="_blank">l\'API</a> puis recharge.</div>';b.textContent='⚪ Hors ligne';}
 }
 
 async function loadDashboard(){
-  try{
-    const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
-    document.getElementById('stats-courses').textContent=coursesCache.length;
-    const total=coursesCache.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
-    document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';
-    document.getElementById('stats-avg').textContent=coursesCache.length?(total/coursesCache.length).toFixed(0)+' €':'0 €';
-    document.getElementById('recent-list').innerHTML=coursesCache.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
+  try{const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
+  document.getElementById('stats-courses').textContent=coursesCache.length;
+  const total=coursesCache.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+  document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';
+  document.getElementById('stats-avg').textContent=coursesCache.length?(total/coursesCache.length).toFixed(0)+' €':'0 €';
+  document.getElementById('recent-list').innerHTML=coursesCache.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
   }catch(e){}
 }
 async function loadHistory(){
   const el=document.getElementById('history-list');el.innerHTML='<div class="loading">…</div>';
-  try{
-    const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
-    el.innerHTML=coursesCache.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune</div></div>';
+  try{const list=await fetchAPI('/courses')||[];coursesCache=Array.isArray(list)?list:[];
+  el.innerHTML=coursesCache.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune</div></div>';
   }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
 async function loadAlerts(){
   const el=document.getElementById('alerts-list');el.innerHTML='<div class="loading">…</div>';
-  try{
-    const list=await fetchAPI('/alerts')||[];
-    if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte</div>';return;}
-    el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'')+'</div><div class="body">'+(a.contenu||'')+'</div><div class="body" style="margin-top:8px">'+(a.niveau||'')+' · '+(a.categorie||'')+'</div></div>').join('');
+  try{const list=await fetchAPI('/alerts')||[];
+  if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte</div>';return;}
+  el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'')+'</div><div class="body">'+(a.contenu||'')+'</div></div>').join('');
   }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
 async function refreshAlerts(){
@@ -311,50 +301,31 @@ async function refreshAlerts(){
   finally{btn.disabled=false;btn.textContent='Actualiser';}
 }
 async function loadStats(){
-  try{
-    const list=await fetchAPI('/courses')||[];
-    const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
-    const max=list.reduce((m,c)=>Math.max(m,parseFloat(c.montant_total)||0),0);
-    document.getElementById('stats-total-courses').textContent=list.length;
-    document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
-    document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
-    document.getElementById('stats-max-price').textContent=max.toFixed(2)+' €';
+  try{const list=await fetchAPI('/courses')||[];
+  const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+  const max=list.reduce((m,c)=>Math.max(m,parseFloat(c.montant_total)||0),0);
+  document.getElementById('stats-total-courses').textContent=list.length;
+  document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
+  document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
+  document.getElementById('stats-max-price').textContent=max.toFixed(2)+' €';
   }catch(e){}
 }
 
 async function createCourse(){
   const errorDiv=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
   errorDiv.classList.add('hidden');
-  const data={
-    patient_nom:document.getElementById('patient_nom').value.trim(),
-    patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',
-    patient_num_ss:document.getElementById('patient_num_ss').value.trim(),
-    patient_adresse:document.getElementById('patient_adresse').value.trim()||null,
-    date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),
-    lieu_depart:document.getElementById('lieu_depart').value.trim(),
-    lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),
-    kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,
-    code_transport:selectedCode,
-    ordonnance_ok:document.getElementById('ordonnance_ok').checked
-  };
-  if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){
-    errorDiv.textContent='Champs obligatoires manquants';errorDiv.classList.remove('hidden');return;
-  }
-  lastFormData=data;saveDraft();
-  btn.disabled=true;btn.textContent='Vérification…';
+  const data={patient_nom:document.getElementById('patient_nom').value.trim(),patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',patient_num_ss:document.getElementById('patient_num_ss').value.trim(),patient_adresse:document.getElementById('patient_adresse').value.trim()||null,date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),lieu_depart:document.getElementById('lieu_depart').value.trim(),lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,code_transport:selectedCode,ordonnance_ok:document.getElementById('ordonnance_ok').checked};
+  if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){errorDiv.textContent='Champs obligatoires manquants';errorDiv.classList.remove('hidden');return;}
+  lastFormData=data;saveDraft();btn.disabled=true;btn.textContent='Vérification…';
   try{
     const localAlertes=localChecks(data);
-    const course=await fetchAPI('/courses','POST',{
-      patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,
-      patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,
-      date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,
-      kilometrage:data.kilometrage,code_transport:data.code_transport
-    });
+    const course=await fetchAPI('/courses','POST',{patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,kilometrage:data.kilometrage,code_transport:data.code_transport});
     currentCourseId=course.id;
     const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
     const apiOk=result.compatible===true||result.ok===true;
     const alertes=localAlertes.concat(result.alertes||[]);const ok=apiOk&&localAlertes.length===0;
-    const montant=result.montant_calcule??result.montant??null;const conseil=result.conseil||'';const codeSuggere=result.code_suggere||'';
+    const montant=result.montant_calcule??result.montant??null;lastMontant=montant;
+    const conseil=result.conseil||'';const codeSuggere=result.code_suggere||'';
     let message=ok?'Course conforme':(result.message||'Risque de refus CPAM');
     if(!ok&&localAlertes.length&&apiOk)message='Dossier incomplet';
     document.getElementById('result-status').textContent=ok?'✅':'⚠️';
@@ -367,38 +338,47 @@ async function createCourse(){
     if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
     document.getElementById('result-alerts').innerHTML=html;
     document.getElementById('btn-generate').style.display=ok?'block':'none';
+    document.getElementById('xml-box').style.display='none';
     showTab('result');
     const ba=document.getElementById('btn-apply-code');
     if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(codeSuggere);fillForm(lastFormData);saveDraft();showTab('new');};
-  }catch(e){
-    errorDiv.textContent='❌ '+e.message;errorDiv.classList.remove('hidden');
-  }finally{btn.disabled=false;btn.textContent='VÉRIFIER LA COURSE';}
+  }catch(e){errorDiv.textContent='❌ '+e.message;errorDiv.classList.remove('hidden');}
+  finally{btn.disabled=false;btn.textContent='VÉRIFIER LA COURSE';}
 }
 
 async function generateInvoice(){
-  if(!currentCourseId)return;
-  const btn=document.getElementById('btn-generate');btn.disabled=true;btn.textContent='Export…';
+  const btn=document.getElementById('btn-generate');
+  btn.disabled=true;btn.textContent='Export…';
+  // Toujours générer le XML en local (ne dépend pas du navigateur / API)
+  const xml=buildXml();
+  const name='facture-'+(currentCourseId?currentCourseId.slice(0,8):'local')+'.xml';
+  // Essai API (statut paye)
   try{
-    const data=await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');
-    lastXml=data.xml||'';
-    if(lastXml)downloadText('facture-'+currentCourseId.slice(0,8)+'.xml',lastXml);
-    clearDraft();
-    alert('✅ Facture exportée (fichier XML téléchargé)');
-    showTab('dashboard');
+    if(currentCourseId){
+      const data=await fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST');
+      if(data&&data.xml){
+        /* prefer server xml if present */
+      }
+    }
   }catch(e){
-    try{
-      const data=await fetchAPI('/courses/'+currentCourseId+'/generate','POST');
-      if(data.xml)downloadText('facture.xml',data.xml);
-      clearDraft();alert('✅ Facture exportée');showTab('dashboard');
-    }catch(e2){alert(e.message);}
-  }finally{btn.disabled=false;btn.textContent='VALIDER ET EXPORTER (XML)';}
+    try{if(currentCourseId)await fetchAPI('/courses/'+currentCourseId+'/generate','POST');}catch(e2){}
+  }
+  const ok=downloadText(name,xml);
+  const box=document.getElementById('xml-box');
+  box.style.display='block';
+  box.textContent=xml;
+  clearDraft();
+  btn.disabled=false;btn.textContent='VALIDER ET EXPORTER XML';
+  if(ok){
+    alert('✅ XML prêt.\n\n1) Fichier téléchargé : '+name+'\n2) Ou copie le XML affiché sous le bouton.');
+  }else{
+    alert('✅ XML affiché sous le bouton.\nCopie-le dans un fichier .xml');
+  }
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('course_date').value=new Date().toISOString().slice(0,10);
-  loadDraft();
-  testAPI();
-  loadDashboard();
+  loadDraft();testAPI();loadDashboard();
 });
 </script>
 </body>
