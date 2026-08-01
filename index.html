@@ -39,11 +39,11 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
 .voice-fab.active{background:#ef4444;animation:pulse 1.2s infinite;box-shadow:0 0 25px rgba(239,68,68,.8)}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
-/* MODULE SCAN ULTRA SIMPLE */
+/* MODULE SCAN */
 .scan-zone{background:#1e293b;border:2px dashed #0ea5e9;border-radius:16px;padding:16px;text-align:center;margin-bottom:16px;cursor:pointer}
 .scan-zone h3{color:#38bdf8;font-size:15px;margin-bottom:4px}
 .scan-zone p{color:#94a3b8;font-size:12px}
-.cat-selector{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-top:10px}
+.cat-selector{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-top:10px;margin-bottom:16px;}
 .cat-btn{background:#0f172a;border:1px solid #334155;color:#94a3b8;padding:8px 12px;border-radius:20px;font-size:12px;white-space:nowrap;cursor:pointer}
 .cat-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
 </style>
@@ -61,7 +61,6 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
 <div class="nav-tabs" id="main-nav">
   <button class="active" data-tab="dashboard" onclick="showTab('dashboard')">Accueil</button>
   <button data-tab="history" onclick="showTab('history')">Historique</button>
-  <button data-tab="scan" onclick="showTab('scan')">Documents / Scan</button>
 </div>
 
 <!-- ACCUEIL -->
@@ -76,12 +75,28 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
   <div id="recent-list"></div>
 </div>
 
-<!-- NOUVELLE COURSE -->
+<!-- NOUVELLE COURSE (INCLUT LE SCAN) -->
 <div id="tab-new" class="hidden">
   <button class="back-btn" onclick="showTab('dashboard')">← Retour</button>
   <h2>Nouvelle course</h2>
   
   <div id="voice-feedback" style="color:#a78bfa;font-size:13px;min-height:20px;margin:8px 0;text-align:center"></div>
+
+  <!-- MODULE SCAN INTÉGRÉ ICI -->
+  <div class="scan-zone" onclick="document.getElementById('file-input').click()">
+    <h3>📷 1. Ajouter l'ordonnance (PMT)</h3>
+    <p>Photo, galerie ou fichier. L'IA extrait le N° de Sécu.</p>
+  </div>
+  <!-- J'ai supprimé capture="environment" pour permettre de choisir Galerie ou Fichier -->
+  <input type="file" id="file-input" accept="image/*, application/pdf" style="display:none" onchange="processDocument(event)">
+  <div id="scan-preview" style="margin-bottom:16px;text-align:center;"></div>
+  
+  <label style="color:#94a3b8;font-size:13px;">Catégorie de doc :</label>
+  <div class="cat-selector">
+    <button class="cat-btn active" onclick="setCategory('CPAM', this)">📄 CPAM / Ord.</button>
+    <button class="cat-btn" onclick="setCategory('Frais', this)">☕ Frais</button>
+    <button class="cat-btn" onclick="setCategory('Voyage', this)">⛽ Péage/Essence</button>
+  </div>
 
   <div class="input-group"><label>Nom & Prénom patient</label><input id="patient_nom" placeholder="DUPONT Jean"></div>
   <div class="input-group"><label>N° Sécurité Sociale (15 chiffres)</label><input id="patient_num_ss" placeholder="185037512345678" inputmode="numeric"></div>
@@ -101,27 +116,6 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
 
   <button class="btn" id="btn-verify" onclick="createCourse()">VALIDER & VÉRIFIER (MISTRAL)</button>
   <div id="course-error" class="error-box hidden"></div>
-</div>
-
-<!-- MODULE SCAN / FACTURES -->
-<div id="tab-scan" class="hidden">
-  <h2>📷 Numériser un document</h2>
-  <div class="scan-zone" onclick="document.getElementById('file-input').click()">
-    <h3>📷 Prenez une photo / Choisissez un fichier</h3>
-    <p>OCR local (sans serveur) + classement automatique</p>
-  </div>
-  <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="processDocument(event)">
-
-  <label style="color:#94a3b8;font-size:13px;">Catégorie de classement :</label>
-  <div class="cat-selector">
-    <button class="cat-btn active" onclick="setCategory('CPAM', this)">📄 CPAM / Ord.</button>
-    <button class="cat-btn" onclick="setCategory('Frais', this)">☕ Frais</button>
-    <button class="cat-btn" onclick="setCategory('Alimentaire', this)">🥪 Alimentaire</button>
-    <button class="cat-btn" onclick="setCategory('Maintenance', this)">🔧 Maintenance</button>
-    <button class="cat-btn" onclick="setCategory('Voyage', this)">⛽ Péage/Carburant</button>
-  </div>
-
-  <div id="scan-preview" style="margin-top:16px;text-align:center;"></div>
 </div>
 
 <!-- HISTORIQUE -->
@@ -156,7 +150,7 @@ function speak(text){
   window.speechSynthesis.speak(u);
 }
 
-// GESTION DU MICRO UNIQUE FLOTTANT
+// GESTION DU MICRO
 function toggleVoiceMaster(){
   if(!SpeechRecognition){ alert("Synthèse vocale non supportée sur ce navigateur"); return; }
   voiceActive = !voiceActive;
@@ -191,24 +185,45 @@ function startListeningLoop(){
 }
 
 function parseVoiceCommand(t){
-  if(t.includes("nouvelle course") || t.includes("ajouter course") || t.includes("créer course")){
+  // Ouverture Nouvelle Course
+  if(t.includes("nouvelle course") || t.includes("ajouter course")){
     showTab('new');
     speak("Nouvelle course ouverte.");
     return;
   }
-  if(t.includes("frais")){ setCategory('Frais'); speak("Catégorie frais"); return; }
-  if(t.includes("alimentaire")){ setCategory('Alimentaire'); speak("Catégorie alimentaire"); return; }
-  if(t.includes("maintenance")){ setCategory('Maintenance'); speak("Catégorie maintenance"); return; }
-  if(t.includes("voyage") || t.includes("péage")){ setCategory('Voyage'); speak("Catégorie voyage"); return; }
-  if(t.includes("cpam")){ setCategory('CPAM'); speak("Catégorie CPAM"); return; }
+  
+  // Validation vocale de la course
+  if(t.includes("valider") || t.includes("enregistrer") || t.includes("confirmer la course")){
+    if(!document.getElementById('tab-new').classList.contains('hidden')){
+      createCourse();
+      return;
+    }
+  }
 
+  // Remplissage du formulaire avec des regex plus souples
   if(!document.getElementById('tab-new').classList.contains('hidden')){
-    let m = t.match(/(?:patient|nom)\s+([a-z\-]+)\s+([a-z\-]+)/i);
-    if(m){ document.getElementById('patient_nom').value = (m[1] + " " + m[2]).toUpperCase(); }
-    m = t.match(/de\s+(.+?)\s+à\s+(.+)/i);
-    if(m){ document.getElementById('lieu_depart').value = m[1].trim(); document.getElementById('lieu_arrivee').value = m[2].trim(); }
-    m = t.match(/(\d+[.,]?\d*)\s*(?:km|kilomètres)/i);
-    if(m){ document.getElementById('kilometrage').value = m[1].replace(',','.'); }
+    
+    // Détecte : "il s'appelle Dupont Jean" ou "le nom est Dupont" ou "monsieur Dupont"
+    let m = t.match(/(?:patient|nom|s'appelle|monsieur|madame|mr|mme)\s+([a-zéèàîï\-]+)(?:\s+([a-zéèàîï\-]+))?/i);
+    if(m){ 
+      let nom = m[1] || "";
+      let prenom = m[2] || "";
+      document.getElementById('patient_nom').value = (nom + " " + prenom).trim().toUpperCase(); 
+    }
+    
+    // Détecte : "de Avignon à Orange" ou "départ Avignon arrivée Orange"
+    m = t.match(/(?:de|départ)\s+(.+?)\s+(?:à|vers|pour|arrivée)\s+(.+)/i);
+    if(m){ 
+      document.getElementById('lieu_depart').value = m[1].trim(); 
+      document.getElementById('lieu_arrivee').value = m[2].trim(); 
+    }
+    
+    // Détecte : "42 km" ou "42.5 kilomètres"
+    m = t.match(/(\d+[.,]?\d*)\s*(?:km|kilomètre)/i);
+    if(m){ 
+      document.getElementById('kilometrage').value = m[1].replace(',','.'); 
+    }
+    
     if(t.includes("t1")) selectCode('T1');
     if(t.includes("t2")) selectCode('T2');
     if(t.includes("t3")) selectCode('T3');
@@ -241,7 +256,7 @@ async function processDocument(e){
   const file = e.target.files[0];
   if(!file) return;
   const preview = document.getElementById('scan-preview');
-  preview.innerHTML = "<p style='color:#38bdf8'>⏳ Analyse OCR locale en cours sur votre appareil...</p>";
+  preview.innerHTML = "<p style='color:#38bdf8'>⏳ Analyse OCR locale en cours...</p>";
 
   const reader = new FileReader();
   reader.onload = function(event){
@@ -269,32 +284,32 @@ async function processDocument(e){
         const ret = await worker.recognize(canvas);
         await worker.terminate();
         
-        // Extrait le N° de Sécurité Sociale s'il est présent sur le document
+        // Extrait le N° de Sécurité Sociale
         const text = ret.data.text;
         const nirMatch = text.match(/[12]\s*[\d\s]{14,18}/);
         if(nirMatch){
           const cleanNir = nirMatch[0].replace(/\s+/g, '');
           if(cleanNir.length >= 13) {
             document.getElementById('patient_num_ss').value = cleanNir.substring(0, 15);
+            speak("Numéro de sécurité sociale détecté.");
           }
         }
       } catch(err) {
-        console.log("OCR local indisponible, sauvegarde visuelle simple.");
+        console.log("OCR local indisponible.");
       }
 
       const processedUrl = canvas.toDataURL('image/jpeg', 0.85);
       preview.innerHTML = `
-        <img src="${processedUrl}" style="max-width:100%;border-radius:12px;border:2px solid #22c55e">
-        <p style="color:#4ade80;margin-top:8px">✅ Document analysé en local — Classé dans : <b>${selectedCategory}</b></p>
+        <img src="${processedUrl}" style="max-width:100%;border-radius:12px;border:2px solid #22c55e; max-height:200px;">
+        <p style="color:#4ade80;margin-top:8px">✅ Document joint à la course</p>
       `;
-      speak("Document scanné et sécurisé.");
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// CRÉATION DE COURSE (DONNÉES NOMINATIVES CONSERVÉES LOCALEMENT, SEULES LES DONNÉES TECHNIQUE SONT ENVOYÉES À MISTRAL)
+// CRÉATION DE COURSE
 async function createCourse(){
   const data = {
     patient_nom: document.getElementById('patient_nom').value.trim(),
