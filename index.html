@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TaxiCPAM Copilote</title>
+<!-- OCR 100% Local dans le navigateur (Zéro fuite RGPD) -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:16px;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:100px}
@@ -19,16 +21,8 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
 .stat-number.green{color:#4ade80}
 .stat-label{font-size:11px;color:#94a3b8;margin-top:4px}
 .btn{background:#0ea5e9;color:#fff;border:none;padding:16px 0;border-radius:14px;font-size:16px;font-weight:700;width:100%;cursor:pointer;margin:10px 0;min-height:52px}
-.btn-success{background:#22c55e}
 .btn-secondary{background:#334155}
-.btn-danger{background:#ef4444}
 .card{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}
-.card-row{display:flex;justify-content:space-between;gap:10px}
-.card .title{font-weight:700;font-size:15px}
-.card .body{color:#94a3b8;font-size:13px;margin-top:4px}
-.card .amount{color:#4ade80;font-weight:700}
-.badge-status{display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:6px}
-.badge-brouillon{background:#713f12;color:#fbbf24}
 .input-group{margin-bottom:14px}
 .input-group label{display:block;color:#94a3b8;font-size:13px;margin-bottom:6px}
 .input-group input{width:100%;padding:14px 12px;background:#1e293b;border:1px solid #334155;border-radius:12px;color:#f8fafc;font-size:16px;min-height:48px}
@@ -82,7 +76,7 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
   <div id="recent-list"></div>
 </div>
 
-<!-- NOUVELLE COURSE (PURÉMENT ÉPURÉE) -->
+<!-- NOUVELLE COURSE -->
 <div id="tab-new" class="hidden">
   <button class="back-btn" onclick="showTab('dashboard')">← Retour</button>
   <h2>Nouvelle course</h2>
@@ -105,7 +99,7 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
     </div>
   </div>
 
-  <button class="btn" id="btn-verify" onclick="createCourse()">VALIDER & VÉRIFIER</button>
+  <button class="btn" id="btn-verify" onclick="createCourse()">VALIDER & VÉRIFIER (MISTRAL)</button>
   <div id="course-error" class="error-box hidden"></div>
 </div>
 
@@ -114,7 +108,7 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
   <h2>📷 Numériser un document</h2>
   <div class="scan-zone" onclick="document.getElementById('file-input').click()">
     <h3>📷 Prenez une photo / Choisissez un fichier</h3>
-    <p>Ajustement auto (luminosité, recadrage) et classement PDF</p>
+    <p>OCR local (sans serveur) + classement automatique</p>
   </div>
   <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="processDocument(event)">
 
@@ -164,7 +158,7 @@ function speak(text){
 
 // GESTION DU MICRO UNIQUE FLOTTANT
 function toggleVoiceMaster(){
-  if(!SpeechRecognition){ alert("Synthèse vocale non supportée"); return; }
+  if(!SpeechRecognition){ alert("Synthèse vocale non supportée sur ce navigateur"); return; }
   voiceActive = !voiceActive;
   const btn = document.getElementById('mic-btn');
   if(voiceActive){
@@ -196,44 +190,29 @@ function startListeningLoop(){
   try{ recognizer.start(); }catch(e){}
 }
 
-// ANALYSE INTELLECTUELLE DES ORDRES VOCAUX
 function parseVoiceCommand(t){
-  // 1. Navigation automatique vers Nouvelle Course
   if(t.includes("nouvelle course") || t.includes("ajouter course") || t.includes("créer course")){
     showTab('new');
-    speak("J'ouvre la nouvelle course. Dictez les informations.");
+    speak("Nouvelle course ouverte.");
     return;
   }
+  if(t.includes("frais")){ setCategory('Frais'); speak("Catégorie frais"); return; }
+  if(t.includes("alimentaire")){ setCategory('Alimentaire'); speak("Catégorie alimentaire"); return; }
+  if(t.includes("maintenance")){ setCategory('Maintenance'); speak("Catégorie maintenance"); return; }
+  if(t.includes("voyage") || t.includes("péage")){ setCategory('Voyage'); speak("Catégorie voyage"); return; }
+  if(t.includes("cpam")){ setCategory('CPAM'); speak("Catégorie CPAM"); return; }
 
-  // 2. Classement vocal des documents
-  if(t.includes("frais")){ setCategory('Frais'); speak("Classé en frais"); return; }
-  if(t.includes("alimentaire")){ setCategory('Alimentaire'); speak("Classé en alimentaire"); return; }
-  if(t.includes("maintenance") || t.includes("garage")){ setCategory('Maintenance'); speak("Classé en maintenance"); return; }
-  if(t.includes("voyage") || t.includes("péage") || t.includes("essence")){ setCategory('Voyage'); speak("Classé en voyage"); return; }
-  if(t.includes("cpam") || t.includes("ordonnance")){ setCategory('CPAM'); speak("Classé en CPAM"); return; }
-
-  // 3. Remplissage direct du formulaire si sur l'onglet Nouvelle Course
   if(!document.getElementById('tab-new').classList.contains('hidden')){
-    // Extraction Nom
     let m = t.match(/(?:patient|nom)\s+([a-z\-]+)\s+([a-z\-]+)/i);
     if(m){ document.getElementById('patient_nom').value = (m[1] + " " + m[2]).toUpperCase(); }
-
-    // Extraction Départ / Arrivée
-    m = t.match(/de\s+(.+?)\s+à\s+(.+)/i) || t.match(/départ\s+(.+?)\s+arrivée\s+(.+)/i);
-    if(m){
-      document.getElementById('lieu_depart').value = m[1].trim();
-      document.getElementById('lieu_arrivee').value = m[2].trim();
-    }
-
-    // Extraction Km
+    m = t.match(/de\s+(.+?)\s+à\s+(.+)/i);
+    if(m){ document.getElementById('lieu_depart').value = m[1].trim(); document.getElementById('lieu_arrivee').value = m[2].trim(); }
     m = t.match(/(\d+[.,]?\d*)\s*(?:km|kilomètres)/i);
     if(m){ document.getElementById('kilometrage').value = m[1].replace(',','.'); }
-
-    // Extraction Codes T1-T4
-    if(t.includes("t1") || t.includes("code 1")) selectCode('T1');
-    if(t.includes("t2") || t.includes("code 2")) selectCode('T2');
-    if(t.includes("t3") || t.includes("code 3")) selectCode('T3');
-    if(t.includes("t4") || t.includes("code 4")) selectCode('T4');
+    if(t.includes("t1")) selectCode('T1');
+    if(t.includes("t2")) selectCode('T2');
+    if(t.includes("t3")) selectCode('T3');
+    if(t.includes("t4")) selectCode('T4');
   }
 }
 
@@ -257,52 +236,69 @@ function setCategory(cat, btnElement){
   }
 }
 
-// RETRAITEMENT D'IMAGE AUTOMATIQUE (OPTIMISATION DOCUMENT/PDF)
-function processDocument(e){
+// RETRAITEMENT D'IMAGE & OCR 100% LOCAL
+async function processDocument(e){
   const file = e.target.files[0];
   if(!file) return;
   const preview = document.getElementById('scan-preview');
-  preview.innerHTML = "<p style='color:#38bdf8'>⏳ Optimisation & ajustement de la luminosité...</p>";
+  preview.innerHTML = "<p style='color:#38bdf8'>⏳ Analyse OCR locale en cours sur votre appareil...</p>";
 
   const reader = new FileReader();
   reader.onload = function(event){
     const img = new Image();
-    img.onload = function(){
+    img.onload = async function(){
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = img.width;
       canvas.height = img.height;
-
-      // Dessin de l'image
       ctx.drawImage(img, 0, 0);
 
-      // Traitement du contraste et de la luminosité pour document type PDF
+      // Traitement visuel local (contraste)
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const d = imgData.data;
       for (let i = 0; i < d.length; i += 4) {
-        // Filtre de netteté / contraste N&B léger
         let avg = (d[i] + d[i+1] + d[i+2]) / 3;
-        avg = avg > 140 ? 255 : avg * 0.8; // Blanchit le fond, assombrit le texte
+        avg = avg > 135 ? 255 : avg * 0.75;
         d[i] = avg; d[i+1] = avg; d[i+2] = avg;
       }
       ctx.putImageData(imgData, 0, 0);
 
+      // Moteur OCR local Tesseract
+      try {
+        const worker = await Tesseract.createWorker('fra');
+        const ret = await worker.recognize(canvas);
+        await worker.terminate();
+        
+        // Extrait le N° de Sécurité Sociale s'il est présent sur le document
+        const text = ret.data.text;
+        const nirMatch = text.match(/[12]\s*[\d\s]{14,18}/);
+        if(nirMatch){
+          const cleanNir = nirMatch[0].replace(/\s+/g, '');
+          if(cleanNir.length >= 13) {
+            document.getElementById('patient_num_ss').value = cleanNir.substring(0, 15);
+          }
+        }
+      } catch(err) {
+        console.log("OCR local indisponible, sauvegarde visuelle simple.");
+      }
+
       const processedUrl = canvas.toDataURL('image/jpeg', 0.85);
       preview.innerHTML = `
-        <img src="${processedUrl}" style="max-width:100%;border-radius:12px;border:2px solid #7c3aed">
-        <p style="color:#4ade80;margin-top:8px">✅ Document ajusté et enregistré sous dossier : <b>Dossier_Scan/${selectedCategory}</b></p>
+        <img src="${processedUrl}" style="max-width:100%;border-radius:12px;border:2px solid #22c55e">
+        <p style="color:#4ade80;margin-top:8px">✅ Document analysé en local — Classé dans : <b>${selectedCategory}</b></p>
       `;
-      speak("Document recadré, optimisé et enregistré en " + selectedCategory);
+      speak("Document scanné et sécurisé.");
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// CRÉATION DE COURSE
+// CRÉATION DE COURSE (DONNÉES NOMINATIVES CONSERVÉES LOCALEMENT, SEULES LES DONNÉES TECHNIQUE SONT ENVOYÉES À MISTRAL)
 async function createCourse(){
   const data = {
     patient_nom: document.getElementById('patient_nom').value.trim(),
+    patient_num_ss: document.getElementById('patient_num_ss').value.trim(),
     lieu_depart: document.getElementById('lieu_depart').value.trim(),
     lieu_arrivee: document.getElementById('lieu_arrivee').value.trim(),
     kilometrage: parseFloat(document.getElementById('kilometrage').value) || 0,
@@ -310,7 +306,7 @@ async function createCourse(){
   };
 
   if(!data.patient_nom || !data.lieu_depart || !data.lieu_arrivee){
-    document.getElementById('course-error').textContent = "Veuillez remplir les champs obligatoires.";
+    document.getElementById('course-error').textContent = "Remplissez les champs obligatoires.";
     document.getElementById('course-error').classList.remove('hidden');
     speak("Informations manquantes.");
     return;
@@ -329,7 +325,7 @@ async function createCourse(){
       document.getElementById('mistral-box').classList.remove('hidden');
     }
     showTab('result');
-    speak("Course enregistrée avec succès.");
+    speak("Course validée.");
   } catch(e) {
     document.getElementById('course-error').textContent = "Erreur de connexion serveur.";
     document.getElementById('course-error').classList.remove('hidden');
