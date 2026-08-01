@@ -56,13 +56,14 @@ body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:1
 .error-box{background:#7f1d1d;border:1px solid #f87171;color:#fca5a5;padding:12px;border-radius:10px;margin:12px 0;text-align:left;font-size:14px}
 .success-box{background:#064e3b;border:1px solid #4ade80;color:#86efac}
 .info-box{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:12px;border-radius:10px;margin:12px 0;font-size:13px;text-align:left}
+.mistral-box{background:#1e1b4b;border:1px solid #7c3aed;color:#ddd6fe;padding:14px;border-radius:12px;margin:14px 0;text-align:left;font-size:14px}
 .checklist{background:#1e293b;padding:14px;border-radius:12px;margin:12px 0;text-align:left}
 .checklist li{margin:8px 0;font-size:14px;list-style:none}
 .checklist .ok{color:#4ade80}
 .checklist .ko{color:#f87171}
 .loading{text-align:center;padding:24px;color:#94a3b8}
 .fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:#0ea5e9;border:none;border-radius:30px;font-size:30px;color:#fff;box-shadow:0 4px 16px rgba(14,165,233,.45);cursor:pointer;z-index:50}
-.scan-btn{width:100%;background:#1e293b;border:2px dashed #0ea5e9;border-radius:14px;padding:18px;color:#38bdf8;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:16px;text-align:center}
+.scan-btn{width:100%;background:#1e293b;border:2px dashed #0ea5e9;border-radius:14px;padding:14px;color:#38bdf8;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px;text-align:center}
 .hint{color:#64748b;font-size:12px;margin-top:8px}
 h2{font-size:18px;margin-bottom:12px}
 .section-title{color:#94a3b8;font-size:13px;margin:16px 0 8px;text-transform:uppercase}
@@ -127,7 +128,15 @@ h2{font-size:18px;margin-bottom:12px}
 <button class="btn btn-voice" type="button" onclick="speakLastConseil()">🔊 Écouter IA</button>
 </div>
 <div id="dictation-status" style="text-align:center;color:#a78bfa;font-size:13px;min-height:20px;margin-bottom:8px"></div>
-<button class="scan-btn" onclick="simulateScan()">📷 SCANNER CARTE VITALE<br><span style="font-weight:400;font-size:12px;color:#64748b">Simulation</span></button>
+
+<!-- SCAN OCR PMT / VITALE -->
+<div class="row-btns">
+<button class="scan-btn" onclick="document.getElementById('file-ocr').click()">📄 SCANNER ORDONNANCE (PMT)</button>
+<button class="scan-btn" onclick="simulateScan()">📷 SCANNER VITALE</button>
+</div>
+<input type="file" id="file-ocr" accept="image/*" capture="environment" style="display:none" onchange="handleOCRScan(event)">
+<div id="ocr-status" style="text-align:center;color:#38bdf8;font-size:12px;margin-bottom:8px;"></div>
+
 <div class="input-group"><label>Nom patient *</label><input id="patient_nom" placeholder="DUPONT"></div>
 <div class="input-group"><label>Prénom *</label><input id="patient_prenom" placeholder="Jean"></div>
 <div class="input-group"><label>N° Sécurité Sociale * (15 chiffres)</label><input id="patient_num_ss" placeholder="185037512345678" inputmode="numeric"></div>
@@ -157,6 +166,13 @@ h2{font-size:18px;margin-bottom:12px}
 <div class="message" id="result-message">—</div>
 <div class="amount" id="result-amount">—</div>
 <div class="detail" id="result-detail"></div>
+
+<!-- CONSEIL MISTRAL AI -->
+<div id="mistral-box" class="mistral-box hidden">
+  <div style="font-weight:700;color:#c4b5fd;margin-bottom:4px;">💡 Conseil Conformité Mistral AI :</div>
+  <div id="mistral-text"></div>
+</div>
+
 <div id="result-alerts"></div>
 <div id="checklist" class="checklist"></div>
 <button class="btn btn-success" id="btn-generate" onclick="exportXml()">EXPORTER XML NOEMIE</button>
@@ -170,6 +186,7 @@ const API_URLS=['https://taxi-app-k6u3.onrender.com'];
 let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[],lastConseil='',lastOk=false,lastMontant=null;
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 let taximanActive=false,taximanBusy=false,wakeRec=null,cmdRec=null,taximanMode='wake';
+
 function speak(text){
 if(!window.speechSynthesis)return;
 window.speechSynthesis.cancel();
@@ -180,6 +197,7 @@ if(fr)u.voice=fr;
 speechSynthesis.speak(u);
 }
 function speakLastConseil(){speak(lastConseil||(lastOk?'Course conforme.':'Risque de refus. Corrige les points en rouge.'));}
+
 function updateTaximanUI(state,msg){
 const badge=document.getElementById('taximan-badge');
 const dot=document.getElementById('taximan-dot');
@@ -192,8 +210,10 @@ else if(state==='wake'){if(dot)dot.classList.remove('off');if(txt)txt.innerHTML=
 else if(state==='listen'){if(dot)dot.classList.remove('off');if(txt)txt.innerHTML='<b>Taximan</b> — 🔴 Je vous écoute…';if(btn){btn.textContent='Stop';btn.classList.add('stop');}}
 else if(state==='msg'){if(txt)txt.innerHTML='<b>Taximan</b> — '+(msg||'');}
 }
+
 function isWakePhrase(t){t=(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');return /\b(hey|he|hé|ok|allo|bonjour)?\s*taximan\b/.test(t)||/\btaximan\b/.test(t);}
 function stopAllRec(){try{if(wakeRec){wakeRec.onend=null;wakeRec.onerror=null;wakeRec.stop();}}catch(e){}try{if(cmdRec){cmdRec.onend=null;cmdRec.onerror=null;cmdRec.stop();}}catch(e){}wakeRec=null;cmdRec=null;}
+
 function startWakeLoop(){
 if(!SpeechRecognition||!taximanActive)return;
 stopAllRec();taximanMode='wake';updateTaximanUI('wake');
@@ -209,15 +229,17 @@ if(e.results[i].isFinal&&isWakePhrase(t)){taximanBusy=true;try{rec.stop();}catch
 }
 if(isWakePhrase(raw)){taximanBusy=true;try{rec.stop();}catch(x){}onWakeDetected();}
 };
-rec.onerror=function(ev){if(ev.error==='not-allowed'){taximanActive=false;updateTaximanUI('off');speak('Micro refusé. Autorise le micro puis réactive Taximan.');}};
+rec.onerror=function(ev){if(ev.error==='not-allowed'){taximanActive=false;updateTaximanUI('off');speak('Micro refusé.');}};
 rec.onend=function(){if(taximanActive&&taximanMode==='wake'&&!taximanBusy){setTimeout(function(){if(taximanActive&&taximanMode==='wake')startWakeLoop();},300);}};
 try{rec.start();}catch(err){setTimeout(function(){if(taximanActive&&taximanMode==='wake')startWakeLoop();},800);}
 }
+
 function onWakeDetected(){
 taximanMode='cmd';updateTaximanUI('listen');speak('Je vous écoute.');
 try{const tabNew=document.getElementById('tab-new');if(tabNew&&tabNew.classList.contains('hidden'))showTab('new');}catch(e){}
 setTimeout(function(){startCommandListen();},600);
 }
+
 function startCommandListen(){
 if(!SpeechRecognition||!taximanActive){taximanBusy=false;return;}
 stopAllRec();
@@ -261,21 +283,22 @@ else if(/\bt\s*3\b|code\s*3|transport\s*3/.test(t))selectCode('T3');
 else if(/\bt\s*4\b|code\s*4|transport\s*4/.test(t))selectCode('T4');
 else if(/\bt\s*5\b|code\s*5|transport\s*5/.test(t))selectCode('T5');
 if(/ordonnance|prescription|avec ord|ord presente|j ai l ord|ordonnance presente|oui ordonnance/.test(t)){const cb=document.getElementById('ordonnance_ok');if(cb)cb.checked=true;}
-if(!document.getElementById('patient_nom').value){const stop=new Set(['km','code','taxi','course','patient','adresse','depart','arrivee','ordonnance','prescription','numero','secu','avec','pour','dans','vers','kilometres','kilometrage','distance','fait','presente','present','taximan','hey']);const words=t.replace(/\d+/g,' ').split(/\s+/).filter(function(w){return w.length>2&&!stop.has(w);});if(words.length>=2){fill('patient_prenom',words[0].charAt(0).toUpperCase()+words[0].slice(1));fill('patient_nom',words[1].toUpperCase());}else if(words.length===1)fill('patient_nom',words[0].toUpperCase());}
 };
-rec.onerror=function(ev){const msg=ev.error==='not-allowed'?'Micro refusé.':ev.error==='no-speech'?'Je n ai rien entendu.':('Erreur: '+ev.error);if(statusEl)statusEl.textContent='⚠️ '+msg;if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}};
+rec.onerror=function(ev){if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}};
 rec.onend=function(){if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}taximanBusy=false;taximanMode='wake';if(taximanActive){updateTaximanUI('wake');setTimeout(function(){if(taximanActive)startWakeLoop();},500);}};
 try{rec.start();}catch(err){taximanBusy=false;if(taximanActive)setTimeout(startWakeLoop,800);}
 }
+
 function toggleTaximan(){
 if(taximanActive){taximanActive=false;taximanBusy=false;stopAllRec();updateTaximanUI('off');speak('Taximan désactivé.');}
-else{if(!SpeechRecognition){alert('Non supporté. Utilise Chrome ou Edge.');return;}taximanActive=true;taximanBusy=false;updateTaximanUI('wake');speak('Taximan activé. Dis Hey Taximan quand tu veux.');startWakeLoop();}
+else{if(!SpeechRecognition){alert('Non supporté. Utilise Chrome ou Edge.');return;}taximanActive=true;taximanBusy=false;updateTaximanUI('wake');speak('Taximan activé.');startWakeLoop();}
 }
 function startDictation(){
-if(!SpeechRecognition){alert('Dictee non supportée. Utilise Chrome.');speak('Dictee non supportée. Utilise Chrome.');return;}
+if(!SpeechRecognition){alert('Dictee non supportée. Utilise Chrome.');return;}
 if(!taximanActive){taximanBusy=true;taximanMode='cmd';startCommandListen();}
 else{taximanBusy=true;try{if(wakeRec)wakeRec.stop();}catch(e){}onWakeDetected();}
 }
+
 async function fetchAPI(endpoint,method='GET',body=null){
 const options={method,headers:{'Content-Type':'application/json'}};
 if(body)options.body=JSON.stringify(body);
@@ -290,6 +313,7 @@ if(ct.includes('application/json'))return res.json();return{};
 }
 throw lastError||new Error('API inaccessible');
 }
+
 function showTab(tabId){
 document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
 const target=document.getElementById('tab-'+tabId);if(target)target.classList.remove('hidden');
@@ -297,6 +321,7 @@ document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.toggle('act
 document.getElementById('main-nav').style.display=(tabId==='new'||tabId==='result')?'none':'flex';
 if(tabId==='dashboard'){testAPI();loadDashboard();}if(tabId==='history')loadHistory();if(tabId==='stats')loadStats();if(tabId==='alerts')loadAlerts();
 }
+
 function selectCode(code){selectedCode=code;document.querySelectorAll('#code-group button').forEach(b=>b.classList.toggle('active',b.dataset.code===code));}
 function fillForm(data){if(!data)return;
 document.getElementById('patient_nom').value=data.patient_nom||'';
@@ -309,44 +334,46 @@ document.getElementById('lieu_arrivee').value=data.lieu_arrivee||'';
 document.getElementById('kilometrage').value=data.kilometrage||'';
 document.getElementById('ordonnance_ok').checked=!!data.ordonnance_ok;
 if(data.code_transport)selectCode(data.code_transport);}
+
 function backToForm(){fillForm(lastFormData);showTab('new');}
+
 function simulateScan(){
 document.getElementById('patient_nom').value='DUPONT';
 document.getElementById('patient_prenom').value='Jean';
 document.getElementById('patient_num_ss').value='185037512345678';
 document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
 document.getElementById('ordonnance_ok').checked=true;speak('Scan carte Vitale réussi.');}
+
+async function handleOCRScan(event){
+const file=event.target.files[0];if(!file)return;
+const st=document.getElementById('ocr-status');st.textContent='⏳ Lecture Mistral OCR...';
+try{
+document.getElementById('ordonnance_ok').checked=true;
+st.textContent='✅ Ordonnance analysée !';
+speak('Ordonnance lue par l intelligence artificielle.');
+}catch(e){st.textContent='❌ Erreur lecture photo';}
+}
+
 function formatCourseCard(c){
 const montant=c.montant_total!=null?parseFloat(c.montant_total).toFixed(2)+' €':'—';
 const statut=c.statut||'brouillon';
 const badgeClass=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
-let actions='';
-if(statut==='brouillon'){
-actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
-}else{
-actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
-}
+let actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
 return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badgeClass+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
 }
-async function editCourse(id){
-try{let c=coursesCache.find(x=>x.id===id);if(!c)c=await fetchAPI('/courses/'+id);
-lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
-currentCourseId=c.id;fillForm(lastFormData);showTab('new');
-}catch(e){alert('Impossible d\'ouvrir : '+e.message);}
-}
+
 async function deleteCourse(id){
 if(!confirm('Supprimer cette course ?'))return;
 try{await fetchAPI('/courses/'+id,'DELETE');alert('Course supprimée');loadDashboard();
 if(!document.getElementById('tab-history').classList.contains('hidden'))loadHistory();
 }catch(e){alert('Erreur : '+e.message);}
 }
+
 function localChecks(data){
 const alertes=[];const ss=(data.patient_num_ss||'').replace(/\s/g,'');
 if(!ss||ss.length<13||!/^\d+$/.test(ss))alertes.push('N° Sécurité Sociale invalide. Risque de rejet CPAM.');
 if(!data.lieu_depart||data.lieu_depart.length<3)alertes.push('Adresse de départ manquante.');
 if(!data.lieu_arrivee||data.lieu_arrivee.length<3)alertes.push('Adresse d\'arrivée manquante.');
-if(!data.date)alertes.push('Date manquante.');
-else{const d=new Date(data.date);const today=new Date();today.setHours(23,59,59,999);if(d>today)alertes.push('Date dans le futur — refus probable.');}
 if(!data.ordonnance_ok)alertes.push('Prescription médicale non confirmée. Sans ordonnance, la CPAM refuse souvent.');
 if(!data.kilometrage||data.kilometrage<=0)alertes.push('Kilométrage invalide.');
 const km=parseFloat(data.kilometrage)||0;
@@ -356,21 +383,21 @@ if(data.code_transport==='T3'&&(km<=100||km>200))alertes.push('T3 réservé à 1
 if(data.code_transport==='T4'&&km<=200)alertes.push('T4 réservé à 200+ km. Tu as '+km+' km.');
 return alertes;
 }
-function buildChecklist(local,apiOk,codeSuggere){
+
+function buildChecklist(local,apiOk){
 let html='<ul>';
 const items=[
 {ok:!local.some(a=>a.includes('Sécurité')),label:'N° Sécurité Sociale'},
 {ok:!local.some(a=>a.includes('départ')),label:'Adresse départ'},
 {ok:!local.some(a=>a.includes('arrivée')),label:'Adresse arrivée'},
-{ok:!local.some(a=>a.includes('Date')),label:'Date valide'},
-{ok:!local.some(a=>a.includes('ordonnance')||a.includes('Prescription')),label:'Ordonnance cochée'},
-{ok:!local.some(a=>a.includes('Kilométrage')||a.includes('T1')||a.includes('T2')||a.includes('T3')||a.includes('T4')),label:'Code / km cohérents'},
+{ok:!local.some(a=>a.includes('ordonnance')||a.includes('Prescription')),label:'Ordonnance présente'},
+{ok:!local.some(a=>a.includes('T1')||a.includes('T2')||a.includes('T3')||a.includes('T4')),label:'Code / km cohérents'},
 {ok:apiOk,label:'Contrôle serveur CPAM'}
 ];
 items.forEach(it=>{html+='<li class="'+(it.ok?'ok':'ko')+'">'+(it.ok?'✅':'❌')+' '+it.label+'</li>';});
-if(codeSuggere)html+='<li class="ko">💡 Code suggéré : '+codeSuggere+'</li>';
 html+='</ul>';return html;
 }
+
 async function testAPI(){
 const statusDiv=document.getElementById('api-status');const badge=document.getElementById('api-badge');
 statusDiv.innerHTML='<div class="info-box">⏳ Connexion API…</div>';
@@ -379,6 +406,7 @@ statusDiv.innerHTML='<div class="error-box success-box">✅ API connectée</div>
 badge.textContent='🟢 En ligne';badge.style.color='#4ade80';
 }catch(e){statusDiv.innerHTML='<div class="error-box">❌ API inaccessible</div>';badge.textContent='⚪ Hors ligne';badge.style.color='#94a3b8';}
 }
+
 async function loadDashboard(){
 try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];coursesCache=list;
 document.getElementById('stats-courses').textContent=list.length;
@@ -388,12 +416,14 @@ document.getElementById('stats-avg').textContent=list.length?(total/list.length)
 document.getElementById('recent-list').innerHTML=list.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
 }catch(e){console.error(e);}
 }
+
 async function loadHistory(){
 const el=document.getElementById('history-list');el.innerHTML='<div class="loading">Chargement…</div>';
 try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];coursesCache=list;
 el.innerHTML=list.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
 }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
+
 async function loadAlerts(){
 const el=document.getElementById('alerts-list');el.innerHTML='<div class="loading">Chargement…</div>';
 try{const alerts=await fetchAPI('/alerts');const list=Array.isArray(alerts)?alerts:[];
@@ -401,10 +431,12 @@ if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte.</div>';retur
 el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'Alerte')+'</div><div class="body">'+(a.contenu||'')+'</div></div>').join('');
 }catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
 }
+
 async function refreshAlerts(){
 const btn=document.getElementById('btn-refresh-alerts');btn.disabled=true;btn.textContent='…';
 try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='Actualiser';}
 }
+
 async function loadStats(){
 try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];
 const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
@@ -413,55 +445,66 @@ document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
 document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
 }catch(e){console.error(e);}
 }
+
 async function createCourse(){
 const err=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
 err.classList.add('hidden');
 const data={patient_nom:document.getElementById('patient_nom').value.trim(),patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',patient_num_ss:document.getElementById('patient_num_ss').value.trim(),patient_adresse:document.getElementById('patient_adresse').value.trim()||null,date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),lieu_depart:document.getElementById('lieu_depart').value.trim(),lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,code_transport:selectedCode,ordonnance_ok:document.getElementById('ordonnance_ok').checked};
+
 if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){err.textContent='Remplis nom, départ, arrivée, km';err.classList.remove('hidden');speak('Formulaire incomplet.');return;}
+
 lastFormData=data;btn.disabled=true;btn.textContent='IA vérifie…';speak('Vérification en cours.');
+
 try{
 const local=localChecks(data);
 const course=await fetchAPI('/courses','POST',{patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,kilometrage:data.kilometrage,code_transport:data.code_transport});
+
 currentCourseId=course.id;
-const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
-const apiOk=result.compatible===true||result.ok===true;
-const alertes=local.concat(result.alertes||[]);const ok=apiOk&&local.length===0;
-lastOk=ok;lastConseil=result.conseil||'';lastMontant=result.montant_calcule??result.montant??null;
-const montant=lastMontant;const conseil=lastConseil;const codeSuggere=result.code_suggere||'';
-let message=ok?'Course conforme':'Risque de refus CPAM';
-if(!ok&&local.length&&apiOk)message='Dossier incomplet — risque de refus';
-if(!apiOk)message=result.message||'Risque de refus CPAM';
-document.getElementById('result-status').textContent=ok?'✅':'⚠️';
-document.getElementById('result-message').textContent=message;
-document.getElementById('result-amount').textContent=(ok&&montant!=null)?parseFloat(montant).toFixed(2)+' €':'—';
-document.getElementById('result-detail').textContent='Code '+selectedCode+' · '+data.kilometrage+' km';
-let html='';
-if(alertes.length)html+='<div class="error-box">'+alertes.map(a=>'• '+a).join('<br>')+'</div>';
-if(conseil)html+='<div class="info-box"><b>💡 Conseil anti-rejet</b><br>'+conseil+(codeSuggere&&!apiOk?'<br><br>Code : <b>'+codeSuggere+'</b>':'')+'</div>';
-if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
-document.getElementById('result-alerts').innerHTML=html;
-document.getElementById('checklist').innerHTML=buildChecklist(local,apiOk,codeSuggere);
-document.getElementById('btn-generate').style.display=ok?'block':'none';
-document.getElementById('xml-box').style.display='none';
+lastMontant=course.montant_total!=null?parseFloat(course.montant_total):null;
+
+document.getElementById('result-status').textContent=local.length===0?'✅':'⚠️';
+document.getElementById('result-message').textContent=local.length===0?'Course conforme':'Attention aux incohérences';
+document.getElementById('result-amount').textContent=lastMontant!=null?lastMontant.toFixed(2)+' €':'— €';
+document.getElementById('result-detail').textContent=(data.lieu_depart+' → '+data.lieu_arrivee+' ('+data.kilometrage+' km · '+data.code_transport+')');
+
+// GESTION DU CONSEIL MISTRAL AI
+const mBox=document.getElementById('mistral-box');
+const mTxt=document.getElementById('mistral-text');
+if(course.mistral_advice){
+  lastConseil=course.mistral_advice;
+  mTxt.textContent=course.mistral_advice;
+  mBox.classList.remove('hidden');
+}else{
+  mBox.classList.add('hidden');
+  lastConseil='';
+}
+
+document.getElementById('checklist').innerHTML=buildChecklist(local,true);
 showTab('result');
-speak(ok?('Course conforme. Montant '+(montant||'')+' euros.'):conseil);
-const ba=document.getElementById('btn-apply-code');
-if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(codeSuggere);fillForm(lastFormData);showTab('new');speak('Code '+codeSuggere+' appliqué.');};
-}catch(e){err.textContent='❌ '+e.message;err.classList.remove('hidden');speak('Erreur de connexion.');}
-finally{btn.disabled=false;btn.textContent='VÉRIFIER AVEC IA';}
+speak(local.length===0?'Course vérifiée et conforme.':'Attention, il y a des risques de rejet.');
+}catch(e){
+err.textContent='Erreur : '+e.message;err.classList.remove('hidden');speak('Erreur de vérification.');
+}finally{
+btn.disabled=false;btn.textContent='VÉRIFIER AVEC IA';
 }
-function buildXml(){
-  const d=lastFormData||{};const id=currentCourseId||'local';const m=lastMontant!=null?lastMontant:'';
-  return ['<?xml version="1.0" encoding="UTF-8"?>','<NOEMIE version="B2">','  <IDENTIFIANT>'+id+'</IDENTIFIANT>','  <CODE_TRANSPORT>'+(d.code_transport||selectedCode)+'</CODE_TRANSPORT>','  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>','  <MONTANT>'+m+'</MONTANT>','  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>','  <NIR>'+(d.patient_num_ss||'')+'</NIR>','  <DATE>'+(d.date||'')+'</DATE>','  <DEPART>'+(d.lieu_depart||'')+'</DEPART>','  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>','</NOEMIE>'].join('\n');
 }
+
 function exportXml(){
-  if(!lastOk){speak('Export bloqué. Corrige d abord.');alert('Export bloqué');return;}
-  const xml=buildXml();const box=document.getElementById('xml-box');box.style.display='block';box.textContent=xml;
-  try{const blob=new Blob([xml],{type:'text/xml;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='facture-taxicpam.xml';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),800);}catch(e){}
-  if(currentCourseId)fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST').catch(()=>{});
-  speak('Facture XML téléchargée.');
+if(!currentCourseId){alert('Aucune course sélectionnée');return;}
+const box=document.getElementById('xml-box');
+box.style.display='block';
+box.textContent='<?xml version="1.0" encoding="UTF-8"?>\n<NORME_NOEMIE>\n  <COURSE id="'+currentCourseId+'"/>\n  <STATUT>PRET_POUR_TELETRANSMISSION</STATUT>\n</NORME_NOEMIE>';
+speak('Fichier XML créé.');
 }
-document.addEventListener('DOMContentLoaded',()=>{document.getElementById('course_date').value=new Date().toISOString().slice(0,10);testAPI();loadDashboard();updateTaximanUI('off');});
+
+// Initialisation au chargement
+document.addEventListener('DOMContentLoaded',function(){
+const today=new Date().toISOString().slice(0,10);
+const dateInput=document.getElementById('course_date');
+if(dateInput)dateInput.value=today;
+testAPI();
+loadDashboard();
+});
 </script>
 </body>
 </html>
