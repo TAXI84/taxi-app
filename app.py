@@ -6,7 +6,7 @@ from typing import Optional, List
 import uuid
 import os
 
-app = FastAPI(title="TaxiCPAM", version="1.3.0")
+app = FastAPI(title="TaxiCPAM", version="1.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,7 +18,6 @@ app.add_middleware(
 
 courses_db = {}
 
-# Alertes veille (contenu type national transport sanitaire / CPAM)
 alerts_db = [
     {
         "id": str(uuid.uuid4()),
@@ -68,6 +67,8 @@ class CourseCreate(BaseModel):
     lieu_arrivee: str
     kilometrage: float
     code_transport: str
+    chauffeur_email: Optional[str] = None
+    chauffeur_nom: Optional[str] = None
 
 
 def suggest_code(km: float) -> str:
@@ -147,7 +148,7 @@ def build_advice(code: str, km: float) -> dict:
 
 @app.get("/")
 def root():
-    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.3.0"}
+    return {"message": "API TaxiCPAM fonctionne", "docs": "/docs", "version": "1.4.0"}
 
 
 @app.get("/health")
@@ -172,14 +173,20 @@ def create_course(data: CourseCreate):
         "statut": "brouillon",
         "montant": None,
         "montant_total": None,
+        "chauffeur_email": (data.chauffeur_email or "").strip().lower() or None,
+        "chauffeur_nom": data.chauffeur_nom,
     }
     courses_db[course_id] = course
     return course
 
 
 @app.get("/courses")
-def list_courses():
-    return list(reversed(list(courses_db.values())))
+def list_courses(chauffeur_email: Optional[str] = None):
+    items = list(courses_db.values())
+    if chauffeur_email:
+        email = chauffeur_email.strip().lower()
+        items = [c for c in items if (c.get("chauffeur_email") or "") == email]
+    return list(reversed(items))
 
 
 @app.get("/courses/{course_id}")
