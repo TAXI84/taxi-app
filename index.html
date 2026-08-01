@@ -113,6 +113,7 @@ h2{font-size:18px;margin-bottom:12px}
 <button class="btn btn-voice" type="button" onclick="startDictation()">🎤 Dicter</button>
 <button class="btn btn-voice" type="button" onclick="speakLastConseil()">🔊 Écouter IA</button>
 </div>
+<div id="dictation-status" style="text-align:center;color:#a78bfa;font-size:13px;min-height:20px;margin-bottom:8px"></div>
 <button class="scan-btn" onclick="simulateScan()">📷 SCANNER CARTE VITALE<br><span style="font-weight:400;font-size:12px;color:#64748b">Simulation</span></button>
 <div class="input-group"><label>Nom patient *</label><input id="patient_nom" placeholder="DUPONT"></div>
 <div class="input-group"><label>Prénom *</label><input id="patient_prenom" placeholder="Jean"></div>
@@ -143,11 +144,11 @@ h2{font-size:18px;margin-bottom:12px}
 <div class="message" id="result-message">—</div>
 <div class="amount" id="result-amount">—</div>
 <div class="detail" id="result-detail"></div>
-<div id="checklist" class="checklist"></div>
 <div id="result-alerts"></div>
-<div id="xml-box" style="display:none"></div>
-<button class="btn btn-success" id="btn-generate" onclick="exportXml()">✅ VALIDER + XML NOEMIE</button>
+<div id="checklist" class="checklist"></div>
+<button class="btn btn-success" id="btn-generate" onclick="exportXml()">EXPORTER XML NOEMIE</button>
 <button class="btn btn-secondary" onclick="showTab('dashboard')">RETOUR ACCUEIL</button>
+<div id="xml-box" style="display:none"></div>
 </div>
 </div>
 </div>
@@ -166,49 +167,97 @@ speechSynthesis.speak(u);
 }
 function speakLastConseil(){speak(lastConseil||(lastOk?'Course conforme.':'Risque de refus. Corrige les points en rouge.'));}
 function startDictation(){
-if(!SpeechRecognition){alert('Dictée non supportée. Utilise Chrome.');speak('Dictée non supportée sur ce navigateur.');return;}
+if(!SpeechRecognition){alert('Dictee non supportée. Utilise Chrome.');speak('Dictee non supportée. Utilise Chrome.');return;}
 const rec=new SpeechRecognition();
 rec.lang='fr-FR';
 rec.interimResults=false;
-rec.maxAlternatives=1;
+rec.maxAlternatives=3;
 rec.continuous=false;
-const btn=document.querySelector('.btn-voice');
-if(btn)btn.classList.add('listening');
-speak('Je t écoute. Dis tout : nom, prénom, départ, arrivée, kilomètres, code, ordonnance.');
+const btn=document.querySelectorAll('.btn-voice')[0];
+if(btn){btn.classList.add('listening');btn.textContent='🔴 Écoute…';}
+speak('Je t écoute. Dis le nom, les kilometres, le code et si il y a une ordonnance.');
+const statusEl=document.getElementById('dictation-status');
+if(statusEl)statusEl.textContent='🔴 Écoute en cours… parle maintenant';
+function fill(id,val){if(!val)return;const el=document.getElementById(id);if(el){el.value=val;el.style.borderColor='#4ade80';setTimeout(function(){el.style.borderColor='';},2500);}}
+function wordsToNumber(s){
+  const map={zero:0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60,cent:100};
+  s=(s||'').toLowerCase().replace(/quatre[- ]?vingts?/g,'80').replace(/soixante[- ]?dix/g,'70').replace(/quatre[- ]?vingt[- ]?dix/g,'90');
+  let n=parseFloat(String(s).replace(',','.'));
+  if(!isNaN(n))return n;
+  if(s.indexOf('80')>=0){const rest=s.replace('80','').trim();const r=map[rest]||0;return 80+r;}
+  if(s.indexOf('70')>=0){const rest=s.replace('70','').trim();const r=map[rest]||0;return 70+r;}
+  if(s.indexOf('90')>=0){const rest=s.replace('90','').trim();const r=map[rest]||0;return 90+r;}
+  const parts=s.split(/[\s-]+/);
+  let total=0,cur=0;
+  for(let i=0;i<parts.length;i++){
+    const p=parts[i];
+    if(map[p]!==undefined){
+      if(map[p]===100){cur=(cur||1)*100;}
+      else if(map[p]>=20){total+=cur;cur=map[p];}
+      else{cur+=map[p];}
+    }
+  }
+  total+=cur;
+  return total||null;
+}
 rec.onresult=function(e){
-  const raw=(e.results[0][0].transcript||'');
+  let raw='';
+  for(let i=0;i<e.results[0].length;i++){if((e.results[0][i].transcript||'').length>raw.length)raw=e.results[0][i].transcript;}
   const t=raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   speak('J ai entendu : '+raw);
+  if(statusEl)statusEl.textContent='✅ « '+raw+' »';
   let m;
-  m=t.match(/(?:nom(?:\s+(?:du\s+)?patient)?|patient)\s+(?:est\s+)?([a-z\-]+)/i)||t.match(/\bnom\s+([a-z\-]+)/i);
-  if(m)document.getElementById('patient_nom').value=m[1].toUpperCase();
-  m=t.match(/(?:prenom)\s+(?:est\s+)?([a-z\-]+)/i);
-  if(m)document.getElementById('patient_prenom').value=m[1].charAt(0).toUpperCase()+m[1].slice(1);
-  m=t.match(/(?:s appelle|appelle|je m appelle)\s+([a-z\-]+)\s+([a-z\-]+)/i);
-  if(m){document.getElementById('patient_prenom').value=m[1].charAt(0).toUpperCase()+m[1].slice(1);document.getElementById('patient_nom').value=m[2].toUpperCase();}
-  m=t.match(/(?:numero|numero de secu|secu|ss)\s*([0-9\s]{13,20})/i)||t.match(/\b(1[0-9]{12,14})\b/);
-  if(m)document.getElementById('patient_num_ss').value=String(m[1]).replace(/\s/g,'');
-  m=t.match(/(?:adresse(?:\s+patient)?)\s+(.+?)(?=\s+(?:depart|arrivee|kilomet|code|ordonnance|$))/i);
-  if(m)document.getElementById('patient_adresse').value=m[1].trim();
-  m=t.match(/(?:depart|prise en charge)\s+(?:a\s+|de\s+)?(.+?)(?=\s+(?:arrivee|vers|kilomet|code|ordonnance|$))/i);
-  if(m)document.getElementById('lieu_depart').value=m[1].trim();
-  m=t.match(/(?:arrivee|destination|vers)\s+(?:a\s+)?(.+?)(?=\s+(?:kilomet|km|code|ordonnance|$))/i);
-  if(m)document.getElementById('lieu_arrivee').value=m[1].trim();
-  m=t.match(/(\d+[\.,]?\d*)\s*(?:km|kilometres?|kilometrage)/i)||t.match(/(?:kilometrage)\s*(?:de\s*)?(\d+[\.,]?\d*)/i);
-  if(m)document.getElementById('kilometrage').value=String(m[1]).replace(',','.');
-  const codes=['t1','t2','t3','t4','t5'];
-  for(const c of codes){if(t.includes(c)){selectCode(c.toUpperCase());break;}}
-  if(/ordonnance|prescription|avec ord|ord presente/.test(t))document.getElementById('ordonnance_ok').checked=true;
+  m=t.match(/(?:patient|nom)\s+(?:est\s+)?([a-z][a-z\-]+)\s+([a-z][a-z\-]+)/i)
+   ||t.match(/(?:s appelle|appelle|je m appelle)\s+([a-z][a-z\-]+)\s+([a-z][a-z\-]+)/i)
+   ||t.match(/\b([a-z][a-z\-]+)\s+([a-z][a-z\-]+)\s+(?:\d|kilomet|km|code|t[1-5]|ordonnance)/i);
+  if(m){fill('patient_prenom',m[1].charAt(0).toUpperCase()+m[1].slice(1));fill('patient_nom',m[2].toUpperCase());}
+  m=t.match(/(?:nom(?:\s+(?:du\s+)?patient)?)\s+(?:est\s+)?([a-z][a-z\-]+)/i);
+  if(m&&!document.getElementById('patient_nom').value)fill('patient_nom',m[1].toUpperCase());
+  m=t.match(/(?:prenom)\s+(?:est\s+)?([a-z][a-z\-]+)/i);
+  if(m)fill('patient_prenom',m[1].charAt(0).toUpperCase()+m[1].slice(1));
+  m=t.match(/(?:numero|numero de secu|secu|ss|nir)\s*([0-9\s]{13,20})/i)||t.match(/\b(1[0-9]{12,14})\b/);
+  if(m)fill('patient_num_ss',String(m[1]).replace(/\s/g,''));
+  m=t.match(/(?:depart|prise en charge)\s+(?:a\s+|de\s+)?(.+?)(?=\s+(?:arrivee|destination|vers|kilomet|km|code|t[1-5]|ordonnance|$))/i);
+  if(m)fill('lieu_depart',m[1].trim().replace(/^(a|de)\s+/i,''));
+  m=t.match(/(?:arrivee|destination|vers)\s+(?:a\s+)?(.+?)(?=\s+(?:kilomet|km|code|t[1-5]|ordonnance|$))/i);
+  if(m)fill('lieu_arrivee',m[1].trim().replace(/^(a|de)\s+/i,''));
+  m=t.match(/(\d+[\.,]?\d*)\s*(?:km|kilometres?|kilometrage)/i)
+   ||t.match(/(?:kilometrage|distance)\s*(?:de\s*)?(\d+[\.,]?\d*)/i);
+  if(m)fill('kilometrage',String(m[1]).replace(',','.'));
+  else{
+    m=t.match(/(?:kilometrage|distance|fait)\s+([a-z\s\-]+?)(?=\s*(?:km|kilomet|code|t[1-5]|ordonnance|$))/i);
+    if(m){const n=wordsToNumber(m[1]);if(n)fill('kilometrage',String(n));}
+    m=t.match(/\b(quatre[- ]?vingt[- ]?(?:dix)?|soixante[- ]?dix|[a-z\-]+)\s*(?:km|kilometres?)/i);
+    if(m){const n=wordsToNumber(m[1]);if(n)fill('kilometrage',String(n));}
+  }
+  if(/\bt\s*1\b|code\s*1|transport\s*1/.test(t))selectCode('T1');
+  else if(/\bt\s*2\b|code\s*2|transport\s*2/.test(t))selectCode('T2');
+  else if(/\bt\s*3\b|code\s*3|transport\s*3/.test(t))selectCode('T3');
+  else if(/\bt\s*4\b|code\s*4|transport\s*4/.test(t))selectCode('T4');
+  else if(/\bt\s*5\b|code\s*5|transport\s*5/.test(t))selectCode('T5');
+  if(/ordonnance|prescription|avec ord|ord presente|j ai l ord|ordonnance presente|oui ordonnance/.test(t)){
+    document.getElementById('ordonnance_ok').checked=true;
+  }
   if(!document.getElementById('patient_nom').value){
-    const stop=new Set(['km','code','taxi','course','patient','adresse','depart','arrivee','ordonnance','prescription','numero','secu','avec','pour','dans','vers','kilometres','kilometrage']);
-    const words=t.replace(/\d+/g,' ').split(/\s+/).filter(w=>w.length>2&&!stop.has(w));
-    if(words.length>=2){document.getElementById('patient_prenom').value=words[0].charAt(0).toUpperCase()+words[0].slice(1);document.getElementById('patient_nom').value=words[1].toUpperCase();}
-    else if(words.length===1)document.getElementById('patient_nom').value=words[0].toUpperCase();
+    const stop=new Set(['km','code','taxi','course','patient','adresse','depart','arrivee','ordonnance','prescription','numero','secu','avec','pour','dans','vers','kilometres','kilometrage','distance','fait','presente','present']);
+    const words=t.replace(/\d+/g,' ').split(/\s+/).filter(function(w){return w.length>2&&!stop.has(w);});
+    if(words.length>=2){fill('patient_prenom',words[0].charAt(0).toUpperCase()+words[0].slice(1));fill('patient_nom',words[1].toUpperCase());}
+    else if(words.length===1)fill('patient_nom',words[0].toUpperCase());
   }
 };
-rec.onerror=function(ev){speak('Erreur micro. Reessaie.');if(btn)btn.classList.remove('listening');console.warn(ev);};
-rec.onend=function(){if(btn)btn.classList.remove('listening');};
-try{rec.start();}catch(err){speak('Micro deja utilise. Reessaie.');if(btn)btn.classList.remove('listening');}
+rec.onerror=function(ev){
+  const msg=ev.error==='not-allowed'?'Micro refuse. Autorise le micro dans Chrome.':
+            ev.error==='no-speech'?'Je n ai rien entendu. Reessaie.':
+            'Erreur micro. Reessaie.';
+  speak(msg);
+  if(statusEl)statusEl.textContent='⚠️ '+msg;
+  if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}
+};
+rec.onend=function(){
+  if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}
+  if(statusEl&&statusEl.textContent.indexOf('Écoute')>=0)statusEl.textContent='';
+};
+try{rec.start();}catch(err){speak('Micro deja utilise. Attends 2 secondes et reessaie.');if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}}
 }
 async function fetchAPI(endpoint,method='GET',body=null){
 const options={method,headers:{'Content-Type':'application/json'}};
@@ -256,9 +305,9 @@ const statut=c.statut||'brouillon';
 const badgeClass=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
 let actions='';
 if(statut==='brouillon'){
-actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
+actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
 }else{
-actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️</button></div>';
+actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
 }
 return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badgeClass+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
 }
@@ -283,24 +332,25 @@ if(!data.date)alertes.push('Date manquante.');
 else{const d=new Date(data.date);const today=new Date();today.setHours(23,59,59,999);if(d>today)alertes.push('Date dans le futur — refus probable.');}
 if(!data.ordonnance_ok)alertes.push('Prescription médicale non confirmée. Sans ordonnance, la CPAM refuse souvent.');
 if(!data.kilometrage||data.kilometrage<=0)alertes.push('Kilométrage invalide.');
-const km=data.kilometrage||0;
-if(data.code_transport==='T1'&&km>50)alertes.push('T1 limité à 50 km. Utilise T2 ou plus.');
-if(data.code_transport==='T2'&&(km<=50||km>100))alertes.push('T2 pour 50–100 km.');
-if(data.code_transport==='T3'&&(km<=100||km>200))alertes.push('T3 pour 100–200 km.');
-if(data.code_transport==='T4'&&km<=200)alertes.push('T4 pour plus de 200 km.');
+const km=parseFloat(data.kilometrage)||0;
+if(data.code_transport==='T1'&&km>50)alertes.push('T1 réservé à 0-50 km. Tu as '+km+' km → risque de rejet.');
+if(data.code_transport==='T2'&&(km<=50||km>100))alertes.push('T2 réservé à 50-100 km. Tu as '+km+' km.');
+if(data.code_transport==='T3'&&(km<=100||km>200))alertes.push('T3 réservé à 100-200 km. Tu as '+km+' km.');
+if(data.code_transport==='T4'&&km<=200)alertes.push('T4 réservé à 200+ km. Tu as '+km+' km.');
 return alertes;
 }
 function buildChecklist(local,apiOk,codeSuggere){
 let html='<ul>';
 const items=[
-{ok:local.every(a=>!a.includes('Sécurité')),label:'N° SS valide'},
-{ok:local.every(a=>!a.includes('départ')&&!a.includes('arrivée')),label:'Adresses complètes'},
-{ok:local.every(a=>!a.includes('Date')),label:'Date correcte'},
-{ok:local.every(a=>!a.includes('ordonnance')&&!a.includes('Prescription')),label:'Ordonnance cochée'},
-{ok:local.every(a=>!a.includes('Kilométrage')&&!a.includes('T1')&&!a.includes('T2')&&!a.includes('T3')&&!a.includes('T4')),label:'Code / km cohérent'},
-{ok:apiOk,label:'Vérification API OK'}
+{ok:!local.some(a=>a.includes('Sécurité')),label:'N° Sécurité Sociale'},
+{ok:!local.some(a=>a.includes('départ')),label:'Adresse départ'},
+{ok:!local.some(a=>a.includes('arrivée')),label:'Adresse arrivée'},
+{ok:!local.some(a=>a.includes('Date')),label:'Date valide'},
+{ok:!local.some(a=>a.includes('ordonnance')||a.includes('Prescription')),label:'Ordonnance cochée'},
+{ok:!local.some(a=>a.includes('Kilométrage')||a.includes('T1')||a.includes('T2')||a.includes('T3')||a.includes('T4')),label:'Code / km cohérents'},
+{ok:apiOk,label:'Contrôle serveur CPAM'}
 ];
-items.forEach(i=>{html+='<li class="'+(i.ok?'ok':'ko')+'">'+(i.ok?'✅':'❌')+' '+i.label+'</li>';});
+items.forEach(it=>{html+='<li class="'+(it.ok?'ok':'ko')+'">'+(it.ok?'✅':'❌')+' '+it.label+'</li>';});
 if(codeSuggere)html+='<li class="ko">💡 Code suggéré : '+codeSuggere+'</li>';
 html+='</ul>';return html;
 }
@@ -310,7 +360,7 @@ statusDiv.innerHTML='<div class="info-box">⏳ Connexion API…</div>';
 try{await fetchAPI('/courses');
 statusDiv.innerHTML='<div class="error-box success-box">✅ API connectée</div>';
 badge.textContent='🟢 En ligne';badge.style.color='#4ade80';
-}catch(e){statusDiv.innerHTML='<div class="error-box">❌ API inaccessible (réveille Render)</div>';badge.textContent='⚪ Hors ligne';badge.style.color='#94a3b8';}
+}catch(e){statusDiv.innerHTML='<div class="error-box">❌ API inaccessible</div>';badge.textContent='⚪ Hors ligne';badge.style.color='#94a3b8';}
 }
 async function loadDashboard(){
 try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];coursesCache=list;
@@ -336,8 +386,7 @@ el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'Aler
 }
 async function refreshAlerts(){
 const btn=document.getElementById('btn-refresh-alerts');btn.disabled=true;btn.textContent='…';
-try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}
-catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='Actualiser';}
+try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='Actualiser';}
 }
 async function loadStats(){
 try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];
@@ -345,7 +394,7 @@ const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
 document.getElementById('stats-total-courses').textContent=list.length;
 document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
 document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
-}catch(e){}
+}catch(e){console.error(e);}
 }
 async function createCourse(){
 const err=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
@@ -360,10 +409,10 @@ currentCourseId=course.id;
 const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
 const apiOk=result.compatible===true||result.ok===true;
 const alertes=local.concat(result.alertes||[]);const ok=apiOk&&local.length===0;
-const montant=result.montant_calcule??result.montant??null;const conseil=result.conseil||'';const codeSuggere=result.code_suggere||'';
-lastOk=ok;lastMontant=montant;lastConseil=conseil||(ok?'Tout est bon.':'Corrige les points en rouge.');
+lastOk=ok;lastConseil=result.conseil||'';lastMontant=result.montant_calcule??result.montant??null;
+const montant=lastMontant;const conseil=lastConseil;const codeSuggere=result.code_suggere||'';
 let message=ok?'Course conforme':'Risque de refus CPAM';
-if(!ok&&local.length&&apiOk)message='Dossier incomplet';
+if(!ok&&local.length&&apiOk)message='Dossier incomplet — risque de refus';
 if(!apiOk)message=result.message||'Risque de refus CPAM';
 document.getElementById('result-status').textContent=ok?'✅':'⚠️';
 document.getElementById('result-message').textContent=message;
@@ -371,7 +420,7 @@ document.getElementById('result-amount').textContent=(ok&&montant!=null)?parseFl
 document.getElementById('result-detail').textContent='Code '+selectedCode+' · '+data.kilometrage+' km';
 let html='';
 if(alertes.length)html+='<div class="error-box">'+alertes.map(a=>'• '+a).join('<br>')+'</div>';
-if(conseil)html+='<div class="info-box"><b>💡 Conseil IA</b><br>'+conseil+(codeSuggere&&!apiOk?'<br><br>Code : <b>'+codeSuggere+'</b>':'')+'</div>';
+if(conseil)html+='<div class="info-box"><b>💡 Conseil anti-rejet</b><br>'+conseil+(codeSuggere&&!apiOk?'<br><br>Code : <b>'+codeSuggere+'</b>':'')+'</div>';
 if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
 document.getElementById('result-alerts').innerHTML=html;
 document.getElementById('checklist').innerHTML=buildChecklist(local,apiOk,codeSuggere);
@@ -385,15 +434,15 @@ if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(c
 finally{btn.disabled=false;btn.textContent='VÉRIFIER AVEC IA';}
 }
 function buildXml(){
-const d=lastFormData||{};const id=currentCourseId||'local';const m=lastMontant!=null?lastMontant:'';
-return ['<?xml version="1.0" encoding="UTF-8"?>','<NOEMIE version="B2">','  <IDENTIFIANT>'+id+'</IDENTIFIANT>','  <CODE_TRANSPORT>'+(d.code_transport||selectedCode)+'</CODE_TRANSPORT>','  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>','  <MONTANT>'+m+'</MONTANT>','  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>','  <NIR>'+(d.patient_num_ss||'')+'</NIR>','  <DATE>'+(d.date||'')+'</DATE>','  <DEPART>'+(d.lieu_depart||'')+'</DEPART>','  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>','</NOEMIE>'].join('\n');
+  const d=lastFormData||{};const id=currentCourseId||'local';const m=lastMontant!=null?lastMontant:'';
+  return ['<?xml version="1.0" encoding="UTF-8"?>','<NOEMIE version="B2">','  <IDENTIFIANT>'+id+'</IDENTIFIANT>','  <CODE_TRANSPORT>'+(d.code_transport||selectedCode)+'</CODE_TRANSPORT>','  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>','  <MONTANT>'+m+'</MONTANT>','  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>','  <NIR>'+(d.patient_num_ss||'')+'</NIR>','  <DATE>'+(d.date||'')+'</DATE>','  <DEPART>'+(d.lieu_depart||'')+'</DEPART>','  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>','</NOEMIE>'].join('\n');
 }
 function exportXml(){
-if(!lastOk){speak('Export bloqué. Corrige d abord.');alert('Export bloqué');return;}
-const xml=buildXml();const box=document.getElementById('xml-box');box.style.display='block';box.textContent=xml;
-try{const blob=new Blob([xml],{type:'text/xml;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='facture-taxicpam.xml';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),800);}catch(e){}
-if(currentCourseId)fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST').catch(()=>{});
-speak('Facture XML téléchargée.');
+  if(!lastOk){speak('Export bloqué. Corrige d abord.');alert('Export bloqué');return;}
+  const xml=buildXml();const box=document.getElementById('xml-box');box.style.display='block';box.textContent=xml;
+  try{const blob=new Blob([xml],{type:'text/xml;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='facture-taxicpam.xml';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),800);}catch(e){}
+  if(currentCourseId)fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST').catch(()=>{});
+  speak('Facture XML téléchargée.');
 }
 document.addEventListener('DOMContentLoaded',()=>{document.getElementById('course_date').value=new Date().toISOString().slice(0,10);testAPI();loadDashboard();});
 </script>
