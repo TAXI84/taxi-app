@@ -1,1 +1,467 @@
-SEE_FILE
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TaxiCPAM Copilote</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:16px;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:90px}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 0 16px;border-bottom:1px solid #334155;margin-bottom:16px}
+.header h1{color:#38bdf8;font-size:20px}
+.badge{background:#1e293b;padding:6px 12px;border-radius:20px;font-size:12px}
+.nav-tabs{display:flex;margin:12px 0 20px;border-bottom:1px solid #334155}
+.nav-tabs button{flex:1;padding:12px 6px;background:none;border:none;color:#94a3b8;font-size:12px;font-weight:600;border-bottom:2px solid transparent;cursor:pointer}
+.nav-tabs button.active{color:#38bdf8;border-bottom-color:#38bdf8}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0}
+.stat-card{background:#1e293b;padding:14px 10px;border-radius:12px;text-align:center}
+.stat-number{font-size:22px;font-weight:800;color:#38bdf8}
+.stat-number.green{color:#4ade80}
+.stat-label{font-size:11px;color:#94a3b8;margin-top:4px}
+.btn{background:#0ea5e9;color:#fff;border:none;padding:16px 0;border-radius:14px;font-size:16px;font-weight:700;width:100%;cursor:pointer;margin:10px 0;min-height:52px}
+.btn:disabled{opacity:.5}
+.btn-success{background:#22c55e}
+.btn-secondary{background:#334155}
+.btn-danger{background:#ef4444}
+.btn-voice{background:#7c3aed}
+.btn-sm{padding:10px 14px;font-size:13px;min-height:40px;width:auto;margin:0}
+.row-btns{display:flex;gap:8px;margin:10px 0}
+.row-btns .btn{flex:1;margin:0;font-size:14px;padding:14px 8px}
+.card{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}
+.card-row{display:flex;justify-content:space-between;gap:10px}
+.card .title{font-weight:700;font-size:15px}
+.card .body{color:#94a3b8;font-size:13px;margin-top:4px}
+.card .amount{color:#4ade80;font-weight:700}
+.badge-status{display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:6px}
+.badge-paye{background:#14532d;color:#4ade80}
+.badge-verifie{background:#0c4a6e;color:#38bdf8}
+.badge-brouillon{background:#713f12;color:#fbbf24}
+.card-actions{display:flex;gap:8px;margin-top:12px}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;color:#94a3b8;font-size:13px;margin-bottom:6px}
+.input-group input{width:100%;padding:14px 12px;background:#1e293b;border:1px solid #334155;border-radius:12px;color:#f8fafc;font-size:16px;min-height:48px}
+.check-row{display:flex;align-items:center;gap:12px;background:#1e293b;padding:14px;border-radius:12px;margin-bottom:14px;min-height:52px}
+.check-row input{width:22px;height:22px}
+.check-row label{color:#f8fafc;font-size:15px;margin:0}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.radio-group button{padding:12px 16px;background:#1e293b;border:none;border-radius:12px;color:#f8fafc;font-weight:700;font-size:15px;cursor:pointer;min-height:48px;min-width:56px}
+.radio-group button.active{background:#0ea5e9}
+.result{text-align:center;padding:20px 8px}
+.result .status{font-size:52px}
+.result .message{font-size:20px;font-weight:700;margin:12px 0}
+.result .amount{font-size:36px;font-weight:800;color:#4ade80;margin:8px 0 16px}
+.result .detail{color:#94a3b8;font-size:14px;margin-bottom:12px}
+.hidden{display:none!important}
+.back-btn{background:none;border:none;color:#38bdf8;font-size:15px;cursor:pointer;margin-bottom:12px;padding:8px 0}
+.error-box{background:#7f1d1d;border:1px solid #f87171;color:#fca5a5;padding:12px;border-radius:10px;margin:12px 0;text-align:left;font-size:14px}
+.success-box{background:#064e3b;border:1px solid #4ade80;color:#86efac}
+.info-box{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:12px;border-radius:10px;margin:12px 0;font-size:13px;text-align:left}
+.checklist{background:#1e293b;padding:14px;border-radius:12px;margin:12px 0;text-align:left}
+.checklist li{margin:8px 0;font-size:14px;list-style:none}
+.checklist .ok{color:#4ade80}
+.checklist .ko{color:#f87171}
+.loading{text-align:center;padding:24px;color:#94a3b8}
+.fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:#0ea5e9;border:none;border-radius:30px;font-size:30px;color:#fff;box-shadow:0 4px 16px rgba(14,165,233,.45);cursor:pointer;z-index:50}
+.scan-btn{width:100%;background:#1e293b;border:2px dashed #0ea5e9;border-radius:14px;padding:18px;color:#38bdf8;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:16px;text-align:center}
+.hint{color:#64748b;font-size:12px;margin-top:8px}
+h2{font-size:18px;margin-bottom:12px}
+.section-title{color:#94a3b8;font-size:13px;margin:16px 0 8px;text-transform:uppercase}
+#xml-box{background:#0f172a;border:1px solid #334155;padding:12px;border-radius:10px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:12px 0;max-height:180px;overflow:auto;text-align:left}
+.listening{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.taximan-badge{position:fixed;bottom:90px;left:16px;right:16px;z-index:60;background:#1e1b4b;border:1px solid #7c3aed;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(124,58,237,.35)}
+.taximan-badge.hidden{display:none!important}
+.taximan-badge .dot{width:10px;height:10px;border-radius:50%;background:#4ade80;animation:pulse 1.2s infinite;flex-shrink:0}
+.taximan-badge .dot.off{background:#64748b;animation:none}
+.taximan-badge .txt{flex:1;font-size:13px;color:#e2e8f0}
+.taximan-badge .txt b{color:#c4b5fd}
+.taximan-badge button{background:#7c3aed;border:none;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;min-height:36px}
+.taximan-badge button.stop{background:#334155}
+</style>
+</head>
+<body>
+<div id="taximan-badge" class="taximan-badge">
+<span class="dot off" id="taximan-dot"></span>
+<div class="txt" id="taximan-txt"><b>Taximan</b> — appuie une fois pour activer (mains libres au volant)</div>
+<button type="button" id="taximan-btn" onclick="toggleTaximan()">Activer</button>
+</div>
+<div id="app">
+<div class="header"><h1>🚕 TaxiCPAM Copilote</h1><span class="badge" id="api-badge">…</span></div>
+<div class="nav-tabs" id="main-nav">
+<button class="active" data-tab="dashboard" onclick="showTab('dashboard')">Accueil</button>
+<button data-tab="history" onclick="showTab('history')">Historique</button>
+<button data-tab="alerts" onclick="showTab('alerts')">Alertes</button>
+<button data-tab="stats" onclick="showTab('stats')">Stats</button>
+</div>
+<div id="tab-dashboard">
+<div id="api-status"></div>
+<div class="stats">
+<div class="stat-card"><div class="stat-number" id="stats-courses">0</div><div class="stat-label">Courses</div></div>
+<div class="stat-card"><div class="stat-number green" id="stats-ca">0 €</div><div class="stat-label">CA</div></div>
+<div class="stat-card"><div class="stat-number" id="stats-avg">0 €</div><div class="stat-label">Moyenne</div></div>
+</div>
+<button class="btn" onclick="showTab('new')">+ NOUVELLE COURSE</button>
+<div class="section-title">Dernières courses</div>
+<div id="recent-list"></div>
+<button class="fab" onclick="showTab('new')">+</button>
+</div>
+<div id="tab-history" class="hidden"><h2>📋 Toutes les courses</h2><div id="history-list"></div></div>
+<div id="tab-alerts" class="hidden">
+<h2>🔔 Veille réglementaire</h2>
+<button class="btn btn-secondary" onclick="refreshAlerts()" id="btn-refresh-alerts">Actualiser</button>
+<div id="alerts-list"></div>
+</div>
+<div id="tab-stats" class="hidden">
+<h2>📈 Statistiques</h2>
+<div class="stats">
+<div class="stat-card"><div class="stat-number" id="stats-total-courses">0</div><div class="stat-label">Total</div></div>
+<div class="stat-card"><div class="stat-number green" id="stats-total-ca">0 €</div><div class="stat-label">CA</div></div>
+<div class="stat-card"><div class="stat-number" id="stats-avg-price">0 €</div><div class="stat-label">Moyenne</div></div>
+</div>
+</div>
+<div id="tab-new" class="hidden">
+<button class="back-btn" onclick="showTab('dashboard')">← Accueil</button>
+<h2>Nouvelle course + IA</h2>
+<div class="row-btns">
+<button class="btn btn-voice" type="button" onclick="startDictation()">🎤 Dicter</button>
+<button class="btn btn-voice" type="button" onclick="speakLastConseil()">🔊 Écouter IA</button>
+</div>
+<div id="dictation-status" style="text-align:center;color:#a78bfa;font-size:13px;min-height:20px;margin-bottom:8px"></div>
+<button class="scan-btn" onclick="simulateScan()">📷 SCANNER CARTE VITALE<br><span style="font-weight:400;font-size:12px;color:#64748b">Simulation</span></button>
+<div class="input-group"><label>Nom patient *</label><input id="patient_nom" placeholder="DUPONT"></div>
+<div class="input-group"><label>Prénom *</label><input id="patient_prenom" placeholder="Jean"></div>
+<div class="input-group"><label>N° Sécurité Sociale * (15 chiffres)</label><input id="patient_num_ss" placeholder="185037512345678" inputmode="numeric"></div>
+<div class="input-group"><label>Adresse patient</label><input id="patient_adresse" placeholder="12 rue de la République"></div>
+<div class="input-group"><label>Date course *</label><input id="course_date" type="date"></div>
+<div class="input-group"><label>Départ *</label><input id="lieu_depart" placeholder="Adresse de prise en charge"></div>
+<div class="input-group"><label>Arrivée *</label><input id="lieu_arrivee" placeholder="Destination"></div>
+<div class="input-group"><label>Kilométrage *</label><input id="kilometrage" placeholder="42.5" type="number" step="0.1" inputmode="decimal"></div>
+<div class="check-row"><input type="checkbox" id="ordonnance_ok"><label for="ordonnance_ok">Ordonnance / prescription médicale présente</label></div>
+<div class="input-group"><label>Code transport *</label>
+<div class="radio-group" id="code-group">
+<button type="button" data-code="T1" class="active" onclick="selectCode('T1')">T1</button>
+<button type="button" data-code="T2" onclick="selectCode('T2')">T2</button>
+<button type="button" data-code="T3" onclick="selectCode('T3')">T3</button>
+<button type="button" data-code="T4" onclick="selectCode('T4')">T4</button>
+<button type="button" data-code="T5" onclick="selectCode('T5')">T5</button>
+</div>
+<p class="hint">T1: 0–50 km · T2: 50–100 · T3: 100–200 · T4: 200+ · T5: Paris</p>
+</div>
+<button class="btn" id="btn-verify" onclick="createCourse()">VÉRIFIER AVEC IA</button>
+<div id="course-error" class="error-box hidden"></div>
+</div>
+<div id="tab-result" class="hidden">
+<button class="back-btn" onclick="backToForm()">← Corriger la course</button>
+<div class="result">
+<div class="status" id="result-status">✅</div>
+<div class="message" id="result-message">—</div>
+<div class="amount" id="result-amount">—</div>
+<div class="detail" id="result-detail"></div>
+<div id="result-alerts"></div>
+<div id="checklist" class="checklist"></div>
+<button class="btn btn-success" id="btn-generate" onclick="exportXml()">EXPORTER XML NOEMIE</button>
+<button class="btn btn-secondary" onclick="showTab('dashboard')">RETOUR ACCUEIL</button>
+<div id="xml-box" style="display:none"></div>
+</div>
+</div>
+</div>
+<script>
+const API_URLS=['https://taxi-app-k6u3.onrender.com'];
+let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,coursesCache=[],lastConseil='',lastOk=false,lastMontant=null;
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let taximanActive=false,taximanBusy=false,wakeRec=null,cmdRec=null,taximanMode='wake';
+function speak(text){
+if(!window.speechSynthesis)return;
+window.speechSynthesis.cancel();
+const u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';u.rate=1.05;
+const voices=speechSynthesis.getVoices();
+const fr=voices.find(v=>v.lang.startsWith('fr'));
+if(fr)u.voice=fr;
+speechSynthesis.speak(u);
+}
+function speakLastConseil(){speak(lastConseil||(lastOk?'Course conforme.':'Risque de refus. Corrige les points en rouge.'));}
+function updateTaximanUI(state,msg){
+const badge=document.getElementById('taximan-badge');
+const dot=document.getElementById('taximan-dot');
+const txt=document.getElementById('taximan-txt');
+const btn=document.getElementById('taximan-btn');
+if(!badge)return;
+badge.classList.remove('hidden');
+if(state==='off'){if(dot)dot.classList.add('off');if(txt)txt.innerHTML='<b>Taximan</b> — appuie une fois pour activer (mains libres au volant)';if(btn){btn.textContent='Activer';btn.classList.remove('stop');}}
+else if(state==='wake'){if(dot)dot.classList.remove('off');if(txt)txt.innerHTML='<b>Taximan</b> — dis « Hey Taximan »';if(btn){btn.textContent='Stop';btn.classList.add('stop');}}
+else if(state==='listen'){if(dot)dot.classList.remove('off');if(txt)txt.innerHTML='<b>Taximan</b> — 🔴 Je vous écoute…';if(btn){btn.textContent='Stop';btn.classList.add('stop');}}
+else if(state==='msg'){if(txt)txt.innerHTML='<b>Taximan</b> — '+(msg||'');}
+}
+function isWakePhrase(t){t=(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');return /\b(hey|he|hé|ok|allo|bonjour)?\s*taximan\b/.test(t)||/\btaximan\b/.test(t);}
+function stopAllRec(){try{if(wakeRec){wakeRec.onend=null;wakeRec.onerror=null;wakeRec.stop();}}catch(e){}try{if(cmdRec){cmdRec.onend=null;cmdRec.onerror=null;cmdRec.stop();}}catch(e){}wakeRec=null;cmdRec=null;}
+function startWakeLoop(){
+if(!SpeechRecognition||!taximanActive)return;
+stopAllRec();taximanMode='wake';updateTaximanUI('wake');
+const rec=new SpeechRecognition();wakeRec=rec;
+rec.lang='fr-FR';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
+rec.onresult=function(e){
+if(taximanBusy||taximanMode!=='wake')return;
+let raw='';
+for(let i=e.resultIndex;i<e.results.length;i++){
+const t=e.results[i][0].transcript||'';
+if(t.length>raw.length)raw=t;
+if(e.results[i].isFinal&&isWakePhrase(t)){taximanBusy=true;try{rec.stop();}catch(x){}onWakeDetected();return;}
+}
+if(isWakePhrase(raw)){taximanBusy=true;try{rec.stop();}catch(x){}onWakeDetected();}
+};
+rec.onerror=function(ev){if(ev.error==='not-allowed'){taximanActive=false;updateTaximanUI('off');speak('Micro refusé. Autorise le micro puis réactive Taximan.');}};
+rec.onend=function(){if(taximanActive&&taximanMode==='wake'&&!taximanBusy){setTimeout(function(){if(taximanActive&&taximanMode==='wake')startWakeLoop();},300);}};
+try{rec.start();}catch(err){setTimeout(function(){if(taximanActive&&taximanMode==='wake')startWakeLoop();},800);}
+}
+function onWakeDetected(){
+taximanMode='cmd';updateTaximanUI('listen');speak('Je vous écoute.');
+try{const tabNew=document.getElementById('tab-new');if(tabNew&&tabNew.classList.contains('hidden'))showTab('new');}catch(e){}
+setTimeout(function(){startCommandListen();},600);
+}
+function startCommandListen(){
+if(!SpeechRecognition||!taximanActive){taximanBusy=false;return;}
+stopAllRec();
+const rec=new SpeechRecognition();cmdRec=rec;
+rec.lang='fr-FR';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=3;
+const statusEl=document.getElementById('dictation-status');
+if(statusEl)statusEl.textContent='🔴 Taximan écoute la course…';
+const btn=document.querySelectorAll('.btn-voice')[0];
+if(btn){btn.classList.add('listening');btn.textContent='🔴 Écoute…';}
+function fill(id,val){if(!val)return;const el=document.getElementById(id);if(el){el.value=val;el.style.borderColor='#4ade80';setTimeout(function(){el.style.borderColor='';},2500);}}
+function wordsToNumber(s){
+const map={zero:0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60,cent:100};
+s=(s||'').toLowerCase().replace(/quatre[- ]?vingts?/g,'80').replace(/soixante[- ]?dix/g,'70').replace(/quatre[- ]?vingt[- ]?dix/g,'90');
+let n=parseFloat(String(s).replace(',','.'));if(!isNaN(n))return n;
+if(s.indexOf('80')>=0){const rest=s.replace('80','').trim();return 80+(map[rest]||0);}
+if(s.indexOf('70')>=0){const rest=s.replace('70','').trim();return 70+(map[rest]||0);}
+if(s.indexOf('90')>=0){const rest=s.replace('90','').trim();return 90+(map[rest]||0);}
+const parts=s.split(/[\s-]+/);let total=0,cur=0;
+for(let i=0;i<parts.length;i++){const p=parts[i];if(map[p]!==undefined){if(map[p]===100){cur=(cur||1)*100;}else if(map[p]>=20){total+=cur;cur=map[p];}else{cur+=map[p];}}}
+total+=cur;return total||null;}
+rec.onresult=function(e){
+let raw='';for(let i=0;i<e.results[0].length;i++){if((e.results[0][i].transcript||'').length>raw.length)raw=e.results[0][i].transcript;}
+let cleaned=raw.replace(/\b(hey|he|hé|ok|allo)?\s*taximan\b/gi,'').trim();if(!cleaned)cleaned=raw;
+const t=cleaned.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+speak('J ai entendu : '+cleaned);if(statusEl)statusEl.textContent='✅ « '+cleaned+' »';
+let m;
+m=t.match(/(?:patient|nom)\s+(?:est\s+)?([a-z][a-z\-]+)\s+([a-z][a-z\-]+)/i)||t.match(/(?:s appelle|appelle|je m appelle)\s+([a-z][a-z\-]+)\s+([a-z][a-z\-]+)/i)||t.match(/\b([a-z][a-z\-]+)\s+([a-z][a-z\-]+)\s+(?:\d|kilomet|km|code|t[1-5]|ordonnance)/i);
+if(m){fill('patient_prenom',m[1].charAt(0).toUpperCase()+m[1].slice(1));fill('patient_nom',m[2].toUpperCase());}
+m=t.match(/(?:nom(?:\s+(?:du\s+)?patient)?)\s+(?:est\s+)?([a-z][a-z\-]+)/i);if(m&&!document.getElementById('patient_nom').value)fill('patient_nom',m[1].toUpperCase());
+m=t.match(/(?:prenom)\s+(?:est\s+)?([a-z][a-z\-]+)/i);if(m)fill('patient_prenom',m[1].charAt(0).toUpperCase()+m[1].slice(1));
+m=t.match(/(?:numero|numero de secu|secu|ss|nir)\s*([0-9\s]{13,20})/i)||t.match(/\b(1[0-9]{12,14})\b/);if(m)fill('patient_num_ss',String(m[1]).replace(/\s/g,''));
+m=t.match(/(?:depart|prise en charge)\s+(?:a\s+|de\s+)?(.+?)(?=\s+(?:arrivee|destination|vers|kilomet|km|code|t[1-5]|ordonnance|$))/i);if(m)fill('lieu_depart',m[1].trim().replace(/^(a|de)\s+/i,''));
+m=t.match(/(?:arrivee|destination|vers)\s+(?:a\s+)?(.+?)(?=\s+(?:kilomet|km|code|t[1-5]|ordonnance|$))/i);if(m)fill('lieu_arrivee',m[1].trim().replace(/^(a|de)\s+/i,''));
+m=t.match(/(\d+[.,]?\d*)\s*(?:km|kilometres?|kilometrage)/i)||t.match(/(?:kilometrage|distance)\s*(?:de\s*)?(\d+[.,]?\d*)/i);
+if(m)fill('kilometrage',String(m[1]).replace(',','.'));
+else{m=t.match(/(?:kilometrage|distance|fait)\s+([a-z\s\-]+?)(?=\s*(?:km|kilomet|code|t[1-5]|ordonnance|$))/i);if(m){const n=wordsToNumber(m[1]);if(n)fill('kilometrage',String(n));}
+m=t.match(/\b(quatre[- ]?vingt[- ]?(?:dix)?|soixante[- ]?dix|[a-z\-]+)\s*(?:km|kilometres?)/i);if(m){const n=wordsToNumber(m[1]);if(n)fill('kilometrage',String(n));}}
+if(/\bt\s*1\b|code\s*1|transport\s*1/.test(t))selectCode('T1');
+else if(/\bt\s*2\b|code\s*2|transport\s*2/.test(t))selectCode('T2');
+else if(/\bt\s*3\b|code\s*3|transport\s*3/.test(t))selectCode('T3');
+else if(/\bt\s*4\b|code\s*4|transport\s*4/.test(t))selectCode('T4');
+else if(/\bt\s*5\b|code\s*5|transport\s*5/.test(t))selectCode('T5');
+if(/ordonnance|prescription|avec ord|ord presente|j ai l ord|ordonnance presente|oui ordonnance/.test(t)){const cb=document.getElementById('ordonnance_ok');if(cb)cb.checked=true;}
+if(!document.getElementById('patient_nom').value){const stop=new Set(['km','code','taxi','course','patient','adresse','depart','arrivee','ordonnance','prescription','numero','secu','avec','pour','dans','vers','kilometres','kilometrage','distance','fait','presente','present','taximan','hey']);const words=t.replace(/\d+/g,' ').split(/\s+/).filter(function(w){return w.length>2&&!stop.has(w);});if(words.length>=2){fill('patient_prenom',words[0].charAt(0).toUpperCase()+words[0].slice(1));fill('patient_nom',words[1].toUpperCase());}else if(words.length===1)fill('patient_nom',words[0].toUpperCase());}
+};
+rec.onerror=function(ev){const msg=ev.error==='not-allowed'?'Micro refusé.':ev.error==='no-speech'?'Je n ai rien entendu.':('Erreur: '+ev.error);if(statusEl)statusEl.textContent='⚠️ '+msg;if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}};
+rec.onend=function(){if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}taximanBusy=false;taximanMode='wake';if(taximanActive){updateTaximanUI('wake');setTimeout(function(){if(taximanActive)startWakeLoop();},500);}};
+try{rec.start();}catch(err){taximanBusy=false;if(taximanActive)setTimeout(startWakeLoop,800);}
+}
+function toggleTaximan(){
+if(taximanActive){taximanActive=false;taximanBusy=false;stopAllRec();updateTaximanUI('off');speak('Taximan désactivé.');}
+else{if(!SpeechRecognition){alert('Non supporté. Utilise Chrome ou Edge.');return;}taximanActive=true;taximanBusy=false;updateTaximanUI('wake');speak('Taximan activé. Dis Hey Taximan quand tu veux.');startWakeLoop();}
+}
+function startDictation(){
+if(!SpeechRecognition){alert('Dictee non supportée. Utilise Chrome.');speak('Dictee non supportée. Utilise Chrome.');return;}
+if(!taximanActive){taximanBusy=true;taximanMode='cmd';startCommandListen();}
+else{taximanBusy=true;try{if(wakeRec)wakeRec.stop();}catch(e){}onWakeDetected();}
+}
+async function fetchAPI(endpoint,method='GET',body=null){
+const options={method,headers:{'Content-Type':'application/json'}};
+if(body)options.body=JSON.stringify(body);
+let lastError;
+for(const base of API_URLS){
+try{
+const res=await fetch(base+endpoint,options);
+if(!res.ok){const text=await res.text().catch(()=>'');throw new Error('HTTP '+res.status+': '+(text||res.statusText));}
+API_URL=base;const ct=res.headers.get('content-type')||'';
+if(ct.includes('application/json'))return res.json();return{};
+}catch(e){lastError=e;}
+}
+throw lastError||new Error('API inaccessible');
+}
+function showTab(tabId){
+document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
+const target=document.getElementById('tab-'+tabId);if(target)target.classList.remove('hidden');
+document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabId));
+document.getElementById('main-nav').style.display=(tabId==='new'||tabId==='result')?'none':'flex';
+if(tabId==='dashboard'){testAPI();loadDashboard();}if(tabId==='history')loadHistory();if(tabId==='stats')loadStats();if(tabId==='alerts')loadAlerts();
+}
+function selectCode(code){selectedCode=code;document.querySelectorAll('#code-group button').forEach(b=>b.classList.toggle('active',b.dataset.code===code));}
+function fillForm(data){if(!data)return;
+document.getElementById('patient_nom').value=data.patient_nom||'';
+document.getElementById('patient_prenom').value=data.patient_prenom||'';
+document.getElementById('patient_num_ss').value=data.patient_num_ss||'';
+document.getElementById('patient_adresse').value=data.patient_adresse||'';
+document.getElementById('course_date').value=data.date||'';
+document.getElementById('lieu_depart').value=data.lieu_depart||'';
+document.getElementById('lieu_arrivee').value=data.lieu_arrivee||'';
+document.getElementById('kilometrage').value=data.kilometrage||'';
+document.getElementById('ordonnance_ok').checked=!!data.ordonnance_ok;
+if(data.code_transport)selectCode(data.code_transport);}
+function backToForm(){fillForm(lastFormData);showTab('new');}
+function simulateScan(){
+document.getElementById('patient_nom').value='DUPONT';
+document.getElementById('patient_prenom').value='Jean';
+document.getElementById('patient_num_ss').value='185037512345678';
+document.getElementById('patient_adresse').value='12 rue de la République, 75001 Paris';
+document.getElementById('ordonnance_ok').checked=true;speak('Scan carte Vitale réussi.');}
+function formatCourseCard(c){
+const montant=c.montant_total!=null?parseFloat(c.montant_total).toFixed(2)+' €':'—';
+const statut=c.statut||'brouillon';
+const badgeClass=statut==='paye'?'badge-paye':statut==='verifie'?'badge-verifie':'badge-brouillon';
+let actions='';
+if(statut==='brouillon'){
+actions='<div class="card-actions"><button class="btn btn-sm" onclick="editCourse(\''+c.id+'\')">Modifier</button><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
+}else{
+actions='<div class="card-actions"><button class="btn btn-sm btn-danger" onclick="deleteCourse(\''+c.id+'\')">🗑️ Supprimer</button></div>';
+}
+return '<div class="card"><div class="card-row"><div><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+' · '+(c.kilometrage??'?')+' km · '+(c.code_transport||'')+'</div><span class="badge-status '+badgeClass+'">'+statut+'</span></div><div class="amount">'+montant+'</div></div>'+actions+'</div>';
+}
+async function editCourse(id){
+try{let c=coursesCache.find(x=>x.id===id);if(!c)c=await fetchAPI('/courses/'+id);
+lastFormData={patient_nom:c.patient_nom||'',patient_prenom:c.patient_prenom||'',patient_num_ss:c.patient_num_ss||'',patient_adresse:c.patient_adresse||'',date:c.date||'',lieu_depart:c.lieu_depart||'',lieu_arrivee:c.lieu_arrivee||'',kilometrage:c.kilometrage||'',code_transport:c.code_transport||'T1',ordonnance_ok:false};
+currentCourseId=c.id;fillForm(lastFormData);showTab('new');
+}catch(e){alert('Impossible d\'ouvrir : '+e.message);}
+}
+async function deleteCourse(id){
+if(!confirm('Supprimer cette course ?'))return;
+try{await fetchAPI('/courses/'+id,'DELETE');alert('Course supprimée');loadDashboard();
+if(!document.getElementById('tab-history').classList.contains('hidden'))loadHistory();
+}catch(e){alert('Erreur : '+e.message);}
+}
+function localChecks(data){
+const alertes=[];const ss=(data.patient_num_ss||'').replace(/\s/g,'');
+if(!ss||ss.length<13||!/^\d+$/.test(ss))alertes.push('N° Sécurité Sociale invalide. Risque de rejet CPAM.');
+if(!data.lieu_depart||data.lieu_depart.length<3)alertes.push('Adresse de départ manquante.');
+if(!data.lieu_arrivee||data.lieu_arrivee.length<3)alertes.push('Adresse d\'arrivée manquante.');
+if(!data.date)alertes.push('Date manquante.');
+else{const d=new Date(data.date);const today=new Date();today.setHours(23,59,59,999);if(d>today)alertes.push('Date dans le futur — refus probable.');}
+if(!data.ordonnance_ok)alertes.push('Prescription médicale non confirmée. Sans ordonnance, la CPAM refuse souvent.');
+if(!data.kilometrage||data.kilometrage<=0)alertes.push('Kilométrage invalide.');
+const km=parseFloat(data.kilometrage)||0;
+if(data.code_transport==='T1'&&km>50)alertes.push('T1 réservé à 0-50 km. Tu as '+km+' km → risque de rejet.');
+if(data.code_transport==='T2'&&(km<=50||km>100))alertes.push('T2 réservé à 50-100 km. Tu as '+km+' km.');
+if(data.code_transport==='T3'&&(km<=100||km>200))alertes.push('T3 réservé à 100-200 km. Tu as '+km+' km.');
+if(data.code_transport==='T4'&&km<=200)alertes.push('T4 réservé à 200+ km. Tu as '+km+' km.');
+return alertes;
+}
+function buildChecklist(local,apiOk,codeSuggere){
+let html='<ul>';
+const items=[
+{ok:!local.some(a=>a.includes('Sécurité')),label:'N° Sécurité Sociale'},
+{ok:!local.some(a=>a.includes('départ')),label:'Adresse départ'},
+{ok:!local.some(a=>a.includes('arrivée')),label:'Adresse arrivée'},
+{ok:!local.some(a=>a.includes('Date')),label:'Date valide'},
+{ok:!local.some(a=>a.includes('ordonnance')||a.includes('Prescription')),label:'Ordonnance cochée'},
+{ok:!local.some(a=>a.includes('Kilométrage')||a.includes('T1')||a.includes('T2')||a.includes('T3')||a.includes('T4')),label:'Code / km cohérents'},
+{ok:apiOk,label:'Contrôle serveur CPAM'}
+];
+items.forEach(it=>{html+='<li class="'+(it.ok?'ok':'ko')+'">'+(it.ok?'✅':'❌')+' '+it.label+'</li>';});
+if(codeSuggere)html+='<li class="ko">💡 Code suggéré : '+codeSuggere+'</li>';
+html+='</ul>';return html;
+}
+async function testAPI(){
+const statusDiv=document.getElementById('api-status');const badge=document.getElementById('api-badge');
+statusDiv.innerHTML='<div class="info-box">⏳ Connexion API…</div>';
+try{await fetchAPI('/courses');
+statusDiv.innerHTML='<div class="error-box success-box">✅ API connectée</div>';
+badge.textContent='🟢 En ligne';badge.style.color='#4ade80';
+}catch(e){statusDiv.innerHTML='<div class="error-box">❌ API inaccessible</div>';badge.textContent='⚪ Hors ligne';badge.style.color='#94a3b8';}
+}
+async function loadDashboard(){
+try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];coursesCache=list;
+document.getElementById('stats-courses').textContent=list.length;
+const total=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';
+document.getElementById('stats-avg').textContent=list.length?(total/list.length).toFixed(0)+' €':'0 €';
+document.getElementById('recent-list').innerHTML=list.slice(0,8).map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
+}catch(e){console.error(e);}
+}
+async function loadHistory(){
+const el=document.getElementById('history-list');el.innerHTML='<div class="loading">Chargement…</div>';
+try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];coursesCache=list;
+el.innerHTML=list.map(formatCourseCard).join('')||'<div class="card"><div class="body" style="text-align:center">Aucune course</div></div>';
+}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
+}
+async function loadAlerts(){
+const el=document.getElementById('alerts-list');el.innerHTML='<div class="loading">Chargement…</div>';
+try{const alerts=await fetchAPI('/alerts');const list=Array.isArray(alerts)?alerts:[];
+if(!list.length){el.innerHTML='<div class="info-box">Aucune alerte.</div>';return;}
+el.innerHTML=list.map(a=>'<div class="card"><div class="title">'+(a.titre||'Alerte')+'</div><div class="body">'+(a.contenu||'')+'</div></div>').join('');
+}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}
+}
+async function refreshAlerts(){
+const btn=document.getElementById('btn-refresh-alerts');btn.disabled=true;btn.textContent='…';
+try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='Actualiser';}
+}
+async function loadStats(){
+try{const courses=await fetchAPI('/courses');const list=Array.isArray(courses)?courses:[];
+const ca=list.reduce((s,c)=>s+(parseFloat(c.montant_total)||0),0);
+document.getElementById('stats-total-courses').textContent=list.length;
+document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';
+document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';
+}catch(e){console.error(e);}
+}
+async function createCourse(){
+const err=document.getElementById('course-error');const btn=document.getElementById('btn-verify');
+err.classList.add('hidden');
+const data={patient_nom:document.getElementById('patient_nom').value.trim(),patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',patient_num_ss:document.getElementById('patient_num_ss').value.trim(),patient_adresse:document.getElementById('patient_adresse').value.trim()||null,date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),lieu_depart:document.getElementById('lieu_depart').value.trim(),lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),kilometrage:parseFloat(String(document.getElementById('kilometrage').value).replace(',','.'))||0,code_transport:selectedCode,ordonnance_ok:document.getElementById('ordonnance_ok').checked};
+if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){err.textContent='Remplis nom, départ, arrivée, km';err.classList.remove('hidden');speak('Formulaire incomplet.');return;}
+lastFormData=data;btn.disabled=true;btn.textContent='IA vérifie…';speak('Vérification en cours.');
+try{
+const local=localChecks(data);
+const course=await fetchAPI('/courses','POST',{patient_nom:data.patient_nom,patient_prenom:data.patient_prenom,patient_num_ss:data.patient_num_ss||'000000000000000',patient_adresse:data.patient_adresse,date:data.date,lieu_depart:data.lieu_depart,lieu_arrivee:data.lieu_arrivee,kilometrage:data.kilometrage,code_transport:data.code_transport});
+currentCourseId=course.id;
+const result=await fetchAPI('/courses/'+course.id+'/verify','POST');
+const apiOk=result.compatible===true||result.ok===true;
+const alertes=local.concat(result.alertes||[]);const ok=apiOk&&local.length===0;
+lastOk=ok;lastConseil=result.conseil||'';lastMontant=result.montant_calcule??result.montant??null;
+const montant=lastMontant;const conseil=lastConseil;const codeSuggere=result.code_suggere||'';
+let message=ok?'Course conforme':'Risque de refus CPAM';
+if(!ok&&local.length&&apiOk)message='Dossier incomplet — risque de refus';
+if(!apiOk)message=result.message||'Risque de refus CPAM';
+document.getElementById('result-status').textContent=ok?'✅':'⚠️';
+document.getElementById('result-message').textContent=message;
+document.getElementById('result-amount').textContent=(ok&&montant!=null)?parseFloat(montant).toFixed(2)+' €':'—';
+document.getElementById('result-detail').textContent='Code '+selectedCode+' · '+data.kilometrage+' km';
+let html='';
+if(alertes.length)html+='<div class="error-box">'+alertes.map(a=>'• '+a).join('<br>')+'</div>';
+if(conseil)html+='<div class="info-box"><b>💡 Conseil anti-rejet</b><br>'+conseil+(codeSuggere&&!apiOk?'<br><br>Code : <b>'+codeSuggere+'</b>':'')+'</div>';
+if(!apiOk&&codeSuggere)html+='<button class="btn" id="btn-apply-code">APPLIQUER '+codeSuggere+'</button>';
+document.getElementById('result-alerts').innerHTML=html;
+document.getElementById('checklist').innerHTML=buildChecklist(local,apiOk,codeSuggere);
+document.getElementById('btn-generate').style.display=ok?'block':'none';
+document.getElementById('xml-box').style.display='none';
+showTab('result');
+speak(ok?('Course conforme. Montant '+(montant||'')+' euros.'):conseil);
+const ba=document.getElementById('btn-apply-code');
+if(ba)ba.onclick=function(){lastFormData.code_transport=codeSuggere;selectCode(codeSuggere);fillForm(lastFormData);showTab('new');speak('Code '+codeSuggere+' appliqué.');};
+}catch(e){err.textContent='❌ '+e.message;err.classList.remove('hidden');speak('Erreur de connexion.');}
+finally{btn.disabled=false;btn.textContent='VÉRIFIER AVEC IA';}
+}
+function buildXml(){
+  const d=lastFormData||{};const id=currentCourseId||'local';const m=lastMontant!=null?lastMontant:'';
+  return ['<?xml version="1.0" encoding="UTF-8"?>','<NOEMIE version="B2">','  <IDENTIFIANT>'+id+'</IDENTIFIANT>','  <CODE_TRANSPORT>'+(d.code_transport||selectedCode)+'</CODE_TRANSPORT>','  <KILOMETRAGE>'+(d.kilometrage||'')+'</KILOMETRAGE>','  <MONTANT>'+m+'</MONTANT>','  <NOM_PATIENT>'+(d.patient_prenom||'')+' '+(d.patient_nom||'')+'</NOM_PATIENT>','  <NIR>'+(d.patient_num_ss||'')+'</NIR>','  <DATE>'+(d.date||'')+'</DATE>','  <DEPART>'+(d.lieu_depart||'')+'</DEPART>','  <ARRIVEE>'+(d.lieu_arrivee||'')+'</ARRIVEE>','</NOEMIE>'].join('\n');
+}
+function exportXml(){
+  if(!lastOk){speak('Export bloqué. Corrige d abord.');alert('Export bloqué');return;}
+  const xml=buildXml();const box=document.getElementById('xml-box');box.style.display='block';box.textContent=xml;
+  try{const blob=new Blob([xml],{type:'text/xml;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='facture-taxicpam.xml';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),800);}catch(e){}
+  if(currentCourseId)fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST').catch(()=>{});
+  speak('Facture XML téléchargée.');
+}
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('course_date').value=new Date().toISOString().slice(0,10);testAPI();loadDashboard();updateTaximanUI('off');});
+</script>
+</body>
+</html>
