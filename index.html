@@ -72,6 +72,13 @@ h2{font-size:18px;margin-bottom:12px}
 .wake-bar{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#7c3aed;color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:60;display:none;box-shadow:0 4px 20px rgba(124,58,237,.5);max-width:90%;text-align:center}
 .wake-bar.on{display:block}
 .wake-bar.listening{background:#ef4444}
+.rgpd-link{display:block;text-align:center;color:#64748b;font-size:11px;margin:16px 0 8px;text-decoration:underline;cursor:pointer}
+.rgpd-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.rgpd-modal.open{display:flex}
+.rgpd-box{background:#1e293b;border-radius:16px;padding:20px;max-width:400px;max-height:80vh;overflow:auto;color:#f8fafc;font-size:13px;line-height:1.5}
+.rgpd-box h3{color:#38bdf8;margin-bottom:12px;font-size:16px}
+.rgpd-box p{margin-bottom:10px;color:#cbd5e1}
+.rgpd-box .close-btn{margin-top:16px;width:100%}
 </style>
 </head>
 <body>
@@ -93,6 +100,7 @@ h2{font-size:18px;margin-bottom:12px}
 <button class="btn" onclick="showTab('new')">+ NOUVELLE COURSE</button>
 <div class="section-title">Dernières courses</div>
 <div id="recent-list"></div>
+<a class="rgpd-link" onclick="openRgpd()">🔒 Mentions RGPD & confidentialité</a>
 <button class="fab" onclick="showTab('new')">+</button>
 </div>
 <div id="tab-history" class="hidden"><h2>📋 Toutes les courses</h2><div id="history-list"></div></div>
@@ -155,6 +163,22 @@ h2{font-size:18px;margin-bottom:12px}
 </div>
 </div>
 </div>
+
+<div id="rgpd-modal" class="rgpd-modal" onclick="if(event.target===this)closeRgpd()">
+<div class="rgpd-box">
+<h3>🔒 Mentions RGPD – TaxiCPAM</h3>
+<p><b>Responsable :</b> le chauffeur utilisateur de l’application.</p>
+<p><b>Données collectées :</b> nom, prénom, N° Sécurité Sociale (NIR), adresses, date, kilométrage, code transport. Uniquement pour la facturation CPAM.</p>
+<p><b>Finalité :</b> vérification anti-rejet et génération de facture NOEMIE.</p>
+<p><b>Conservation :</b> les courses restent sur le serveur tant que le chauffeur ne les supprime pas.</p>
+<p><b>Vos droits :</b> accès, rectification, suppression (bouton 🗑️ sur chaque course).</p>
+<p><b>Sécurité :</b> HTTPS, pas d’envoi du NIR à une IA externe (OpenAI, Mistral…), contrôles effectués en local autant que possible.</p>
+<p><b>Hébergement :</b> GitHub Pages (interface) + Render (API). Migration Europe prévue.</p>
+<p style="font-size:11px;color:#94a3b8">En utilisant l’appli, le chauffeur s’engage à respecter le secret professionnel et le RGPD vis-à-vis des patients.</p>
+<button class="btn close-btn" onclick="closeRgpd()">Fermer</button>
+</div>
+</div>
+
 <div id="wake-bar" class="wake-bar">🎧 Dis « Taximan » pour activer</div>
 <script>
 const API_URLS=['https://taxi-app-k6u3.onrender.com'];
@@ -631,6 +655,8 @@ function exportXml(){
   if(currentCourseId)fetchAPI('/courses/'+currentCourseId+'/generate-invoice','POST').catch(()=>{});
   speak('Facture XML téléchargée.');
 }
+function openRgpd(){document.getElementById('rgpd-modal').classList.add('open');}
+function closeRgpd(){document.getElementById('rgpd-modal').classList.remove('open');}
 document.addEventListener('DOMContentLoaded',()=>{document.getElementById('course_date').value=new Date().toISOString().slice(0,10);testAPI();loadDashboard();setTimeout(startWakeListener,800);});
 </script>
 </body>
