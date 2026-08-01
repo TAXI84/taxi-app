@@ -9,25 +9,31 @@
 .nav-tabs{display:flex;margin:12px 0 20px;border-bottom:1px solid #334155}.nav-tabs button{flex:1;padding:12px 4px;background:none;border:none;color:#94a3b8;font-size:11px;font-weight:600;border-bottom:2px solid transparent;cursor:pointer}.nav-tabs button.active{color:#38bdf8;border-bottom-color:#38bdf8}
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0}.stat-card{background:#1e293b;padding:14px 10px;border-radius:12px;text-align:center}.stat-number{font-size:22px;font-weight:800;color:#38bdf8}.stat-number.green{color:#4ade80}.stat-label{font-size:11px;color:#94a3b8;margin-top:4px}
 .btn{background:#0ea5e9;color:#fff;border:none;padding:16px 0;border-radius:14px;font-size:16px;font-weight:700;width:100%;cursor:pointer;margin:10px 0;min-height:52px}.btn:disabled{opacity:.5}.btn-success{background:#22c55e}.btn-secondary{background:#334155}.btn-danger{background:#ef4444}.btn-voice{background:#7c3aed}.btn-sm{padding:10px 14px;font-size:13px;min-height:40px;width:auto;margin:0}
-.row-btns{display:flex;gap:8px;margin:10px 0}.row-btns .btn{flex:1;margin:0;font-size:14px;padding:14px 8px}
-.card{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}.card .title{font-weight:700;font-size:15px}.card .body{color:#94a3b8;font-size:13px;margin-top:4px}.card-actions{display:flex;gap:8px;margin-top:12px}
-.input-group{margin-bottom:14px}.input-group label{display:block;color:#94a3b8;font-size:13px;margin-bottom:6px}.input-group input[type=text],.input-group input[type=number],.input-group input[type=date],.input-group input:not([type]){width:100%;padding:14px 12px;background:#1e293b;border:1px solid #334155;border-radius:12px;color:#f8fafc;font-size:16px;min-height:48px}
+.row-btns{display:flex;gap:8px;margin:10px 0}.row-btns .btn{flex:1;margin:0;font-size:13px;padding:12px 6px}
+.card{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}.card .title{font-weight:700}.card .body{color:#94a3b8;font-size:13px;margin-top:4px}.card-actions{display:flex;gap:8px;margin-top:12px}
+.input-group{margin-bottom:12px}.input-group label{display:block;color:#94a3b8;font-size:13px;margin-bottom:6px}
+.input-group input:not([type=range]){width:100%;padding:14px 12px;background:#1e293b;border:1px solid #334155;border-radius:12px;color:#f8fafc;font-size:16px}
 .input-group input[type=range]{width:100%}
-.hidden{display:none!important}.hint{color:#64748b;font-size:12px;margin-top:8px}h2{font-size:18px;margin-bottom:12px}.section-title{color:#94a3b8;font-size:13px;margin:16px 0 8px;text-transform:uppercase}
+.hidden{display:none!important}.hint{color:#64748b;font-size:12px}h2{font-size:18px;margin-bottom:12px}.section-title{color:#94a3b8;font-size:13px;margin:14px 0 8px;text-transform:uppercase}
 .info-box{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:12px;border-radius:10px;margin:12px 0;font-size:13px}
-.error-box{background:#7f1d1d;border:1px solid #f87171;color:#fca5a5;padding:12px;border-radius:10px;margin:12px 0;font-size:14px}.success-box{background:#064e3b;border:1px solid #4ade80;color:#86efac}
-.fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:#0ea5e9;border:none;border-radius:30px;font-size:30px;color:#fff;box-shadow:0 4px 16px rgba(14,165,233,.45);cursor:pointer;z-index:50}
-.user-badge{display:flex;align-items:center;gap:8px;background:#1e293b;padding:6px 12px;border-radius:20px;font-size:12px;color:#94a3b8;cursor:pointer}.user-badge img{width:22px;height:22px;border-radius:50%}
-.login-screen{position:fixed;inset:0;background:#0f172a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}.login-screen.hidden{display:none!important}.login-screen h1{color:#38bdf8;font-size:24px;margin-bottom:8px}.login-screen p{color:#94a3b8;font-size:14px;margin-bottom:24px;max-width:280px}
+.error-box{background:#7f1d1d;border:1px solid #f87171;color:#fca5a5;padding:12px;border-radius:10px;margin:12px 0}.success-box{background:#064e3b;border:1px solid #4ade80;color:#86efac}
+.fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:#0ea5e9;border:none;border-radius:30px;font-size:30px;color:#fff;z-index:50}
+.user-badge{display:flex;align-items:center;gap:8px;background:#1e293b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer}.user-badge img{width:22px;height:22px;border-radius:50%}
+.login-screen{position:fixed;inset:0;background:#0f172a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}.login-screen.hidden{display:none!important}.login-screen h1{color:#38bdf8;font-size:24px;margin-bottom:8px}.login-screen p{color:#94a3b8;margin-bottom:24px}
 .cat-btns{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.cat-btns button{padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f8fafc;font-size:12px;cursor:pointer}.cat-btns button.active{background:#0ea5e9;border-color:#0ea5e9}
-#scan-canvas{width:100%;max-height:320px;border-radius:12px;margin:12px 0;background:#1e293b}
-.wake-bar{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#7c3aed;color:#fff;padding:10px 14px;border-radius:24px;font-size:13px;font-weight:600;z-index:60;display:none;max-width:92%}.wake-bar.on{display:flex;align-items:center;gap:6px}.wake-bar.denied{background:#7f1d1d}.wake-bar .wb-text{flex:1;text-align:center;cursor:pointer}.wake-bar .wb-close{background:rgba(255,255,255,.25);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer}
+.scan-stage{position:relative;width:100%;margin:12px 0;background:#0f172a;border-radius:12px;overflow:hidden;touch-action:none}
+.scan-stage canvas{display:block;width:100%;height:auto;max-height:360px;background:#1e293b}
+.crop-box{position:absolute;border:2px solid #38bdf8;box-shadow:0 0 0 9999px rgba(0,0,0,.45);cursor:move;box-sizing:border-box}
+.crop-handle{position:absolute;width:22px;height:22px;background:#38bdf8;border:2px solid #fff;border-radius:4px;z-index:2}
+.crop-handle.tl{left:-11px;top:-11px;cursor:nwse-resize}.crop-handle.tr{right:-11px;top:-11px;cursor:nesw-resize}
+.crop-handle.bl{left:-11px;bottom:-11px;cursor:nesw-resize}.crop-handle.br{right:-11px;bottom:-11px;cursor:nwse-resize}
 </style></head><body>
-<div id="login-screen" class="login-screen"><h1>🚕 TaxiCPAM</h1><p>Connecte-toi avec Gmail.</p>
+<div id="login-screen" class="login-screen"><h1>🚕 TaxiCPAM</h1><p>Connecte-toi avec Gmail</p>
 <div id="g_id_onload" data-client_id="80031496349-1t065qgsvkbs4anbb23vvd694b3hs5nj.apps.googleusercontent.com" data-callback="onGoogleSignIn" data-auto_prompt="false"></div>
 <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_blue" data-text="signin_with"></div></div>
 <div id="app">
-<div class="header"><h1>🚕 TaxiCPAM Copilote</h1><div style="display:flex;gap:8px;align-items:center"><span class="badge" id="api-badge">…</span>
+<div class="header"><h1>🚕 TaxiCPAM Copilote</h1>
+<div style="display:flex;gap:8px;align-items:center"><span class="badge" id="api-badge">…</span>
 <div class="user-badge hidden" id="user-badge" onclick="logoutGoogle()"><img id="user-pic" alt=""><span id="user-name">—</span></div></div></div>
 <div class="nav-tabs" id="main-nav">
 <button class="active" data-tab="dashboard" onclick="showTab('dashboard')">Accueil</button>
@@ -41,30 +47,42 @@
 <div class="stat-card"><div class="stat-number green" id="stats-ca">0 €</div><div class="stat-label">CA</div></div>
 <div class="stat-card"><div class="stat-number" id="stats-avg">0 €</div><div class="stat-label">Moyenne</div></div></div>
 <button class="btn" onclick="showTab('new')">+ NOUVELLE COURSE</button>
-<div class="section-title">Dernières courses</div><div id="recent-list"></div>
+<div class="section-title">Dernières</div><div id="recent-list"></div>
 <button class="fab" onclick="showTab('new')">+</button></div>
-<div id="tab-history" class="hidden"><h2>📋 Courses</h2><div id="history-list"></div></div>
-<div id="tab-alerts" class="hidden"><h2>🔔 Alertes</h2><button class="btn btn-secondary" onclick="refreshAlerts()">Actualiser</button><div id="alerts-list"></div></div>
-<div id="tab-stats" class="hidden"><h2>📈 Stats</h2><div class="stats">
+<div id="tab-history" class="hidden"><h2>Courses</h2><div id="history-list"></div></div>
+<div id="tab-alerts" class="hidden"><h2>Alertes</h2><button class="btn btn-secondary" onclick="refreshAlerts()">Actualiser</button><div id="alerts-list"></div></div>
+<div id="tab-stats" class="hidden"><h2>Stats</h2><div class="stats">
 <div class="stat-card"><div class="stat-number" id="stats-total-courses">0</div><div class="stat-label">Total</div></div>
 <div class="stat-card"><div class="stat-number green" id="stats-total-ca">0 €</div><div class="stat-label">CA</div></div>
 <div class="stat-card"><div class="stat-number" id="stats-avg-price">0 €</div><div class="stat-label">Moyenne</div></div></div></div>
 <div id="tab-scan" class="hidden">
 <h2>📷 Scanner facture</h2>
-<p class="hint">Photo ou galerie → Auto pro (luminosité/contraste) → PDF</p>
+<p class="hint">Photo / Galerie → ✂️ Rogner → ✨ Auto pro → PDF</p>
 <input type="file" id="scan-input-gallery" accept="image/*" style="display:none" onchange="onScanImage(event)">
 <input type="file" id="scan-input-camera" accept="image/*" capture="environment" style="display:none" onchange="onScanImage(event)">
 <div class="row-btns">
 <button class="btn btn-voice" type="button" onclick="document.getElementById('scan-input-camera').click()">📷 Photo</button>
 <button class="btn btn-secondary" type="button" onclick="document.getElementById('scan-input-gallery').click()">🖼️ Galerie</button>
 </div>
-<canvas id="scan-canvas" class="hidden"></canvas>
+<div id="scan-stage" class="scan-stage hidden">
+<canvas id="scan-canvas"></canvas>
+<div id="crop-box" class="crop-box hidden">
+<div class="crop-handle tl"></div><div class="crop-handle tr"></div>
+<div class="crop-handle bl"></div><div class="crop-handle br"></div>
+</div></div>
 <div id="scan-enhance" class="hidden">
-<div class="section-title">Ajustements scanner</div>
+<div class="section-title">Ajustements</div>
 <div class="input-group"><label>Luminosité <span id="lbl-bright">0</span></label><input type="range" id="scan-bright" min="-50" max="50" value="0" oninput="applyScanEnhance()"></div>
 <div class="input-group"><label>Contraste <span id="lbl-contrast">0</span></label><input type="range" id="scan-contrast" min="-50" max="50" value="0" oninput="applyScanEnhance()"></div>
-<div class="row-btns"><button class="btn btn-secondary" type="button" onclick="autoEnhanceScan()">✨ Auto pro</button>
-<button class="btn btn-secondary" type="button" onclick="resetScanEnhance()">Reset</button></div>
+<div class="row-btns">
+<button class="btn btn-secondary" type="button" onclick="autoEnhanceScan()">✨ Auto pro</button>
+<button class="btn btn-secondary" type="button" onclick="resetScanEnhance()">Reset</button>
+</div>
+<div class="row-btns">
+<button class="btn btn-voice" type="button" onclick="toggleCropMode()">✂️ Rogner</button>
+<button class="btn btn-success" type="button" id="btn-apply-crop" onclick="applyCrop()" disabled>✅ Appliquer rognage</button>
+</div>
+<p class="hint" id="crop-hint" style="display:none">Déplace le cadre bleu · tire les coins · Appliquer</p>
 </div>
 <div class="input-group"><label>Nom</label><input id="scan-name" placeholder="Facture carburant"></div>
 <div class="section-title">Catégorie</div>
@@ -77,14 +95,14 @@
 </div>
 <button class="btn btn-success" id="btn-make-pdf" type="button" onclick="makeScanPdf()" disabled>📄 CRÉER PDF</button>
 <div id="scan-msg" class="info-box hidden"></div>
-<div class="section-title">PDFs enregistrés</div><div id="scan-list"></div>
+<div class="section-title">PDFs</div><div id="scan-list"></div>
 </div>
 <div id="tab-new" class="hidden">
 <button class="btn btn-secondary" onclick="showTab('dashboard')">← Accueil</button>
 <h2>Nouvelle course</h2>
 <div class="input-group"><label>Nom *</label><input id="patient_nom"></div>
 <div class="input-group"><label>Prénom</label><input id="patient_prenom"></div>
-<div class="input-group"><label>N° SS *</label><input id="patient_num_ss" inputmode="numeric"></div>
+<div class="input-group"><label>N° SS</label><input id="patient_num_ss" inputmode="numeric"></div>
 <div class="input-group"><label>Date</label><input id="course_date" type="date"></div>
 <div class="input-group"><label>Départ *</label><input id="lieu_depart"></div>
 <div class="input-group"><label>Arrivée *</label><input id="lieu_arrivee"></div>
@@ -96,47 +114,66 @@
 <button class="btn btn-secondary" onclick="showTab('dashboard')">Accueil</button>
 <div id="result-message" style="font-size:20px;font-weight:700;text-align:center;margin:16px"></div>
 <div id="result-amount" style="font-size:32px;color:#4ade80;text-align:center"></div>
-<button class="btn btn-success" id="btn-generate" onclick="exportXml()">XML</button>
+<button class="btn btn-success" onclick="exportXml()">XML</button>
 </div>
 </div>
-<div id="wake-bar" class="wake-bar"><span class="wb-text" onclick="retryMic()">🎧 Taximan</span><button type="button" class="wb-close" onclick="dismissWakeBar(event)">✕</button></div>
 <script>
-const API_URLS=['https://taxi-app-k6u3.onrender.com'];let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastFormData=null,lastOk=false,lastMontant=null,lastConseil='',currentUser=null;
+const API_URLS=['https://taxi-app-k6u3.onrender.com'];let API_URL=API_URLS[0],selectedCode='T1',currentCourseId=null,lastOk=false,lastMontant=null,currentUser=null;
 const GOOGLE_CLIENT_ID='80031496349-1t065qgsvkbs4anbb23vvd694b3hs5nj.apps.googleusercontent.com';
-let scanImageData=null,scanCat='energie',scanOriginalImg=null,wakeDismissed=false,micDenied=false;
+let scanImageData=null,scanCat='energie',scanOriginalImg=null,cropMode=false,cropRect=null,cropDrag=null;
 function loadUser(){try{const r=localStorage.getItem('taxicpam_user');if(r)currentUser=JSON.parse(r);}catch(e){}updateAuthUI();}
 function saveUser(u){currentUser=u;if(u)localStorage.setItem('taxicpam_user',JSON.stringify(u));else localStorage.removeItem('taxicpam_user');updateAuthUI();}
 function updateAuthUI(){const login=document.getElementById('login-screen'),badge=document.getElementById('user-badge');if(currentUser&&currentUser.email){if(login)login.classList.add('hidden');if(badge){badge.classList.remove('hidden');const p=document.getElementById('user-pic'),n=document.getElementById('user-name');if(p&&currentUser.picture)p.src=currentUser.picture;if(n)n.textContent=(currentUser.name||currentUser.email).split(' ')[0];}}else{if(login)login.classList.remove('hidden');if(badge)badge.classList.add('hidden');}}
 function parseJwt(t){try{const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}catch(e){return null;}}
-function handleGoogleCredential(r){const p=parseJwt(r.credential);if(!p||!p.email){alert('Erreur');return;}saveUser({email:p.email,name:p.name||p.email,picture:p.picture||null,sub:p.sub});testAPI();loadDashboard();}
+function handleGoogleCredential(r){const p=parseJwt(r.credential);if(!p||!p.email)return;saveUser({email:p.email,name:p.name||p.email,picture:p.picture||null,sub:p.sub});testAPI();loadDashboard();}
 window.onGoogleSignIn=handleGoogleCredential;
 function logoutGoogle(){if(confirm('Déconnexion ?'))saveUser(null);}
 function initGoogleSignIn(){if(!window.google||!google.accounts){setTimeout(initGoogleSignIn,500);return;}google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential});document.querySelectorAll('.g_id_signin').forEach(el=>{el.innerHTML='';google.accounts.id.renderButton(el,{theme:'filled_blue',size:'large',width:280});});}
 function speak(t){if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';speechSynthesis.speak(u);}
 function selectScanCat(c){scanCat=c;document.querySelectorAll('#scan-cats button').forEach(b=>b.classList.toggle('active',b.dataset.cat===c));}
-function onScanImage(ev){const file=ev.target.files&&ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const img=new Image();img.onload=function(){scanOriginalImg=img;document.getElementById('scan-bright').value=0;document.getElementById('scan-contrast').value=0;document.getElementById('scan-enhance').classList.remove('hidden');document.getElementById('scan-canvas').classList.remove('hidden');document.getElementById('btn-make-pdf').disabled=false;if(!document.getElementById('scan-name').value)document.getElementById('scan-name').value=file.name.replace(/\.[^.]+$/,'')||'Facture';autoEnhanceScan();};img.src=e.target.result;};reader.readAsDataURL(file);try{ev.target.value='';}catch(x){}}
-function applyScanEnhance(){if(!scanOriginalImg)return;const bright=+document.getElementById('scan-bright').value||0,contrast=+document.getElementById('scan-contrast').value||0;document.getElementById('lbl-bright').textContent=bright;document.getElementById('lbl-contrast').textContent=contrast;const canvas=document.getElementById('scan-canvas');let w=scanOriginalImg.width,h=scanOriginalImg.height;const maxW=900;if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(scanOriginalImg,0,0,w,h);const imageData=ctx.getImageData(0,0,w,h),d=imageData.data;const cf=(259*(contrast+255))/(255*(259-contrast));for(let i=0;i<d.length;i+=4){let r=d[i]+bright,g=d[i+1]+bright,b=d[i+2]+bright;r=cf*(r-128)+128;g=cf*(g-128)+128;b=cf*(b-128)+128;const avg=(r+g+b)/3;if(avg>200){r=g=b=Math.min(255,avg+8);}d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));}ctx.putImageData(imageData,0,0);scanImageData=canvas.toDataURL('image/jpeg',0.92);}
+function onScanImage(ev){const file=ev.target.files&&ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const img=new Image();img.onload=function(){scanOriginalImg=img;document.getElementById('scan-bright').value=0;document.getElementById('scan-contrast').value=0;document.getElementById('scan-enhance').classList.remove('hidden');document.getElementById('scan-stage').classList.remove('hidden');document.getElementById('btn-make-pdf').disabled=false;if(!document.getElementById('scan-name').value)document.getElementById('scan-name').value=file.name.replace(/\.[^.]+$/,'')||'Facture';autoEnhanceScan();};img.src=e.target.result;};reader.readAsDataURL(file);try{ev.target.value='';}catch(x){}}
+function applyScanEnhance(){if(!scanOriginalImg)return;const bright=+document.getElementById('scan-bright').value||0,contrast=+document.getElementById('scan-contrast').value||0;document.getElementById('lbl-bright').textContent=bright;document.getElementById('lbl-contrast').textContent=contrast;const canvas=document.getElementById('scan-canvas');let w=scanOriginalImg.width,h=scanOriginalImg.height;if(w>900){h=Math.round(h*900/w);w=900;}canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(scanOriginalImg,0,0,w,h);const imageData=ctx.getImageData(0,0,w,h),d=imageData.data;const cf=(259*(contrast+255))/(255*(259-contrast));for(let i=0;i<d.length;i+=4){let r=d[i]+bright,g=d[i+1]+bright,b=d[i+2]+bright;r=cf*(r-128)+128;g=cf*(g-128)+128;b=cf*(b-128)+128;const avg=(r+g+b)/3;if(avg>200){r=g=b=Math.min(255,avg+8);}d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));}ctx.putImageData(imageData,0,0);scanImageData=canvas.toDataURL('image/jpeg',0.92);if(cropMode)initCropBox();}
 function autoEnhanceScan(){if(!scanOriginalImg)return;const c=document.createElement('canvas');let w=scanOriginalImg.width,h=scanOriginalImg.height;if(w>200){h=Math.round(h*200/w);w=200;}c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.drawImage(scanOriginalImg,0,0,w,h);const d=ctx.getImageData(0,0,w,h).data;let sum=0,n=0;for(let i=0;i<d.length;i+=16){sum+=(d[i]+d[i+1]+d[i+2])/3;n++;}const avg=sum/n;let bright=5,contrast=30;if(avg<90){bright=35;contrast=40;}else if(avg<130){bright=18;contrast=32;}else if(avg>180){bright=-15;contrast=28;}document.getElementById('scan-bright').value=bright;document.getElementById('scan-contrast').value=contrast;applyScanEnhance();}
 function resetScanEnhance(){document.getElementById('scan-bright').value=0;document.getElementById('scan-contrast').value=0;applyScanEnhance();}
+function toggleCropMode(){if(!scanOriginalImg){alert('Charge une image');return;}cropMode=!cropMode;const box=document.getElementById('crop-box'),hint=document.getElementById('crop-hint'),btn=document.getElementById('btn-apply-crop');if(cropMode){initCropBox();box.classList.remove('hidden');hint.style.display='block';btn.disabled=false;speak('Cadre de rognage');}else{box.classList.add('hidden');hint.style.display='none';btn.disabled=true;}}
+function initCropBox(){const stage=document.getElementById('scan-stage'),canvas=document.getElementById('scan-canvas');const sw=stage.clientWidth||canvas.clientWidth;const sh=canvas.clientHeight||Math.round(sw*(canvas.height/Math.max(1,canvas.width)));const m=Math.round(Math.min(sw,sh)*0.08);cropRect={x:m,y:m,w:sw-2*m,h:sh-2*m};placeCropBox();setupCropEvents();}
+function placeCropBox(){const box=document.getElementById('crop-box');if(!box||!cropRect)return;box.style.left=cropRect.x+'px';box.style.top=cropRect.y+'px';box.style.width=cropRect.w+'px';box.style.height=cropRect.h+'px';box.classList.remove('hidden');}
+function setupCropEvents(){const box=document.getElementById('crop-box'),stage=document.getElementById('scan-stage');if(!box||!stage||box._ok)return;box._ok=true;
+function pt(e){const t=e.touches?e.touches[0]:e;const r=stage.getBoundingClientRect();return{x:t.clientX-r.left,y:t.clientY-r.top};}
+function onStart(e){if(!cropMode)return;e.preventDefault();const p=pt(e);const handle=e.target.closest('.crop-handle');
+if(handle){const kind=['tl','tr','bl','br'].find(k=>handle.classList.contains(k));cropDrag={type:'resize',kind,start:p,orig:Object.assign({},cropRect)};}
+else cropDrag={type:'move',start:p,orig:Object.assign({},cropRect)};}
+function onMove(e){if(!cropDrag||!cropMode)return;e.preventDefault();const p=pt(e);const dx=p.x-cropDrag.start.x,dy=p.y-cropDrag.start.y;const o=cropDrag.orig;const maxW=stage.clientWidth,maxH=document.getElementById('scan-canvas').clientHeight,minS=40;
+if(cropDrag.type==='move'){cropRect.x=Math.max(0,Math.min(maxW-o.w,o.x+dx));cropRect.y=Math.max(0,Math.min(maxH-o.h,o.y+dy));}
+else{let x=o.x,y=o.y,w=o.w,h=o.h;const k=cropDrag.kind;
+if(k==='br'){w=Math.max(minS,o.w+dx);h=Math.max(minS,o.h+dy);}if(k==='tl'){x=o.x+dx;y=o.y+dy;w=o.w-dx;h=o.h-dy;}if(k==='tr'){y=o.y+dy;w=o.w+dx;h=o.h-dy;}if(k==='bl'){x=o.x+dx;w=o.w-dx;h=o.h+dy;}
+if(w<minS){if(k==='tl'||k==='bl')x=o.x+o.w-minS;w=minS;}if(h<minS){if(k==='tl'||k==='tr')y=o.y+o.h-minS;h=minS;}
+x=Math.max(0,x);y=Math.max(0,y);if(x+w>maxW)w=maxW-x;if(y+h>maxH)h=maxH-y;cropRect={x,y,w,h};}
+placeCropBox();}
+function onEnd(){cropDrag=null;}
+box.addEventListener('mousedown',onStart);box.addEventListener('touchstart',onStart,{passive:false});
+window.addEventListener('mousemove',onMove,{passive:false});window.addEventListener('touchmove',onMove,{passive:false});
+window.addEventListener('mouseup',onEnd);window.addEventListener('touchend',onEnd);}
+function applyCrop(){if(!cropRect){alert('Active Rogner');return;}const canvas=document.getElementById('scan-canvas');const scaleX=canvas.width/Math.max(1,canvas.clientWidth);const scaleY=canvas.height/Math.max(1,canvas.clientHeight);
+const sx=Math.round(cropRect.x*scaleX),sy=Math.round(cropRect.y*scaleY),sw=Math.round(cropRect.w*scaleX),sh=Math.round(cropRect.h*scaleY);
+const out=document.createElement('canvas');out.width=Math.max(1,sw);out.height=Math.max(1,sh);out.getContext('2d').drawImage(canvas,sx,sy,sw,sh,0,0,sw,sh);
+const url=out.toDataURL('image/jpeg',0.92);const img=new Image();img.onload=function(){scanOriginalImg=img;scanImageData=url;cropMode=false;document.getElementById('crop-box').classList.add('hidden');document.getElementById('crop-hint').style.display='none';document.getElementById('btn-apply-crop').disabled=true;
+let w=img.width,h=img.height;if(w>900){h=Math.round(h*900/w);w=900;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);scanImageData=canvas.toDataURL('image/jpeg',0.92);speak('Rognage OK');};img.src=url;}
 function getScans(){try{return JSON.parse(localStorage.getItem('taxicpam_scans')||'[]');}catch(e){return[];}}
 function saveScans(l){try{localStorage.setItem('taxicpam_scans',JSON.stringify(l));}catch(e){alert('Stockage plein');}}
-function loadScanList(){const el=document.getElementById('scan-list');if(!el)return;const list=getScans();if(!list.length){el.innerHTML='<div class="card"><div class="body">Aucun PDF</div></div>';return;}el.innerHTML=list.slice().reverse().map((s,i)=>{const idx=list.length-1-i;return '<div class="card"><div class="title">'+esc(s.name)+'</div><div class="body">'+esc(s.cat)+' · '+esc(s.date)+'</div><div class="card-actions"><button class="btn btn-sm" onclick="downloadScan('+idx+')">📥</button><button class="btn btn-sm btn-danger" onclick="deleteScan('+idx+')">🗑️</button></div></div>';}).join('');}
-function esc(t){return String(t||'').replace(/&/g,'&').replace(/</g,'<');}
-function makeScanPdf(){if(!scanImageData){alert('Image d\'abord');return;}const j=window.jspdf;if(!j||!j.jsPDF){alert('PDF charge…');return;}const doc=new j.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const img=new Image();img.onload=function(){const m=10,pw=210,ph=297;let w=pw-2*m,h=w*(img.height/img.width);if(h>ph-2*m){h=ph-2*m;w=h*(img.width/img.height);}doc.addImage(scanImageData,'JPEG',m,m,w,h);const name=(document.getElementById('scan-name').value||'facture').trim();const list=getScans();list.push({id:Date.now().toString(36),name:name,cat:scanCat,date:new Date().toISOString().slice(0,10),pdf:doc.output('datauristring')});saveScans(list);doc.save(name.replace(/[^\w\-]+/g,'_').slice(0,40)+'.pdf');const msg=document.getElementById('scan-msg');msg.textContent='✅ PDF : '+name+' ('+scanCat+')';msg.classList.remove('hidden');loadScanList();speak('PDF créé');};img.src=scanImageData;}
+function loadScanList(){const el=document.getElementById('scan-list');if(!el)return;const list=getScans();if(!list.length){el.innerHTML='<div class="card"><div class="body">Aucun PDF</div></div>';return;}el.innerHTML=list.slice().reverse().map((s,i)=>{const idx=list.length-1-i;return '<div class="card"><div class="title">'+(s.name||'')+'</div><div class="body">'+(s.cat||'')+' · '+(s.date||'')+'</div><div class="card-actions"><button class="btn btn-sm" onclick="downloadScan('+idx+')">📥</button><button class="btn btn-sm btn-danger" onclick="deleteScan('+idx+')">🗑️</button></div></div>';}).join('');}
+function makeScanPdf(){if(!scanImageData){alert('Image d\'abord');return;}const j=window.jspdf;if(!j||!j.jsPDF){alert('PDF…');return;}const doc=new j.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const img=new Image();img.onload=function(){const m=10,pw=210,ph=297;let w=pw-2*m,h=w*(img.height/img.width);if(h>ph-2*m){h=ph-2*m;w=h*(img.width/img.height);}doc.addImage(scanImageData,'JPEG',m,m,w,h);const name=(document.getElementById('scan-name').value||'facture').trim();const list=getScans();list.push({id:Date.now().toString(36),name,cat:scanCat,date:new Date().toISOString().slice(0,10),pdf:doc.output('datauristring')});saveScans(list);doc.save(name.replace(/[^\w\-]+/g,'_').slice(0,40)+'.pdf');const msg=document.getElementById('scan-msg');msg.textContent='✅ PDF : '+name;msg.classList.remove('hidden');loadScanList();speak('PDF créé');};img.src=scanImageData;}
 function downloadScan(i){const s=getScans()[i];if(!s)return;const a=document.createElement('a');a.href=s.pdf;a.download=(s.name||'f')+'.pdf';a.click();}
 function deleteScan(i){if(!confirm('Supprimer ?'))return;const l=getScans();l.splice(i,1);saveScans(l);loadScanList();}
-function setWakeBar(t,l,d){if(wakeDismissed&&!d)return;const el=document.getElementById('wake-bar');if(!el)return;const x=el.querySelector('.wb-text');if(x)x.textContent=t;el.classList.add('on');if(d){el.classList.add('denied');micDenied=true;}else el.classList.remove('denied');}
-function dismissWakeBar(e){if(e)e.stopPropagation();wakeDismissed=true;micDenied=true;document.getElementById('wake-bar').classList.remove('on');}
-function retryMic(){wakeDismissed=false;micDenied=false;setWakeBar('🎧 Micro…',true);}
-async function fetchAPI(ep,method='GET',body=null){const o={method,headers:{'Content-Type':'application/json'}};if(body)o.body=JSON.stringify(body);let last;for(const base of API_URLS){try{const res=await fetch(base+ep,o);if(!res.ok)throw new Error('HTTP '+res.status);API_URL=base;const ct=res.headers.get('content-type')||'';return ct.includes('json')?res.json():{};}catch(e){last=e;}}throw last||new Error('API inaccessible');}
+async function fetchAPI(ep,method='GET',body=null){const o={method,headers:{'Content-Type':'application/json'}};if(body)o.body=JSON.stringify(body);let last;for(const base of API_URLS){try{const res=await fetch(base+ep,o);if(!res.ok)throw new Error('HTTP '+res.status);API_URL=base;return (res.headers.get('content-type')||'').includes('json')?res.json():{};}catch(e){last=e;}}throw last||new Error('API inaccessible');}
 function showTab(id){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));const t=document.getElementById('tab-'+id);if(t)t.classList.remove('hidden');document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.getElementById('main-nav').style.display=(id==='new'||id==='result')?'none':'flex';if(id==='dashboard'){testAPI();loadDashboard();}if(id==='history')loadHistory();if(id==='stats')loadStats();if(id==='alerts')loadAlerts();if(id==='scan')loadScanList();}
 async function testAPI(){const s=document.getElementById('api-status'),b=document.getElementById('api-badge');try{await fetchAPI('/courses');s.innerHTML='<div class="error-box success-box">✅ API</div>';b.textContent='🟢';}catch(e){s.innerHTML='<div class="error-box">❌ API</div>';b.textContent='⚪';}}
-async function loadDashboard(){try{const q=currentUser&&currentUser.email?('?chauffeur_email='+encodeURIComponent(currentUser.email)):'';const courses=await fetchAPI('/courses'+q);const list=Array.isArray(courses)?courses:[];document.getElementById('stats-courses').textContent=list.length;const total=list.reduce((s,c)=>s+(+c.montant_total||0),0);document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';document.getElementById('stats-avg').textContent=list.length?(total/list.length).toFixed(0)+' €':'0 €';document.getElementById('recent-list').innerHTML=list.slice(0,8).map(c=>'<div class="card"><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div><div class="body">'+(c.date||'')+'</div></div>').join('')||'<div class="card"><div class="body">Aucune</div></div>';}catch(e){}}
+async function loadDashboard(){try{const q=currentUser&&currentUser.email?('?chauffeur_email='+encodeURIComponent(currentUser.email)):'';const courses=await fetchAPI('/courses'+q);const list=Array.isArray(courses)?courses:[];document.getElementById('stats-courses').textContent=list.length;const total=list.reduce((s,c)=>s+(+c.montant_total||0),0);document.getElementById('stats-ca').textContent=total.toFixed(0)+' €';document.getElementById('stats-avg').textContent=list.length?(total/list.length).toFixed(0)+' €':'0';document.getElementById('recent-list').innerHTML=list.slice(0,8).map(c=>'<div class="card"><div class="title">'+(c.lieu_depart||'?')+' → '+(c.lieu_arrivee||'?')+'</div></div>').join('')||'<div class="card"><div class="body">Aucune</div></div>';}catch(e){}}
 async function loadHistory(){const el=document.getElementById('history-list');try{const q=currentUser&&currentUser.email?('?chauffeur_email='+encodeURIComponent(currentUser.email)):'';const courses=await fetchAPI('/courses'+q);el.innerHTML=(Array.isArray(courses)?courses:[]).map(c=>'<div class="card"><div class="title">'+(c.lieu_depart||'')+' → '+(c.lieu_arrivee||'')+'</div></div>').join('')||'<div class="card"><div class="body">Aucune</div></div>';}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}}
 async function loadAlerts(){const el=document.getElementById('alerts-list');try{const a=await fetchAPI('/alerts');const list=Array.isArray(a)?a:[];el.innerHTML=list.length?list.map(x=>'<div class="card"><div class="title">'+(x.titre||'')+'</div><div class="body">'+(x.contenu||'')+'</div></div>').join(''):'<div class="info-box">Aucune</div>';}catch(e){el.innerHTML='<div class="error-box">'+e.message+'</div>';}}
 async function refreshAlerts(){try{await fetchAPI('/alerts/refresh','POST');setTimeout(loadAlerts,1500);}catch(e){alert(e.message);}}
-async function loadStats(){try{const q=currentUser&&currentUser.email?('?chauffeur_email='+encodeURIComponent(currentUser.email)):'';const courses=await fetchAPI('/courses'+q);const list=Array.isArray(courses)?courses:[];const ca=list.reduce((s,c)=>s+(+c.montant_total||0),0);document.getElementById('stats-total-courses').textContent=list.length;document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0 €';}catch(e){}}
+async function loadStats(){try{const q=currentUser&&currentUser.email?('?chauffeur_email='+encodeURIComponent(currentUser.email)):'';const courses=await fetchAPI('/courses'+q);const list=Array.isArray(courses)?courses:[];const ca=list.reduce((s,c)=>s+(+c.montant_total||0),0);document.getElementById('stats-total-courses').textContent=list.length;document.getElementById('stats-total-ca').textContent=ca.toFixed(2)+' €';document.getElementById('stats-avg-price').textContent=list.length?(ca/list.length).toFixed(2)+' €':'0';}catch(e){}}
 async function createCourse(){const err=document.getElementById('course-error');err.classList.add('hidden');const data={patient_nom:document.getElementById('patient_nom').value.trim(),patient_prenom:document.getElementById('patient_prenom').value.trim()||'—',patient_num_ss:document.getElementById('patient_num_ss').value.trim(),date:document.getElementById('course_date').value||new Date().toISOString().slice(0,10),lieu_depart:document.getElementById('lieu_depart').value.trim(),lieu_arrivee:document.getElementById('lieu_arrivee').value.trim(),kilometrage:parseFloat(document.getElementById('kilometrage').value)||0,code_transport:selectedCode,chauffeur_email:currentUser&&currentUser.email||null};if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){err.textContent='Champs manquants';err.classList.remove('hidden');return;}try{const course=await fetchAPI('/courses','POST',data);currentCourseId=course.id;const result=await fetchAPI('/courses/'+course.id+'/verify','POST');lastOk=!!(result.compatible||result.ok);lastMontant=result.montant_calcule??result.montant;document.getElementById('result-message').textContent=lastOk?'Conforme':'Risque refus';document.getElementById('result-amount').textContent=lastMontant!=null?parseFloat(lastMontant).toFixed(2)+' €':'—';showTab('result');}catch(e){err.textContent=e.message;err.classList.remove('hidden');}}
-function exportXml(){if(!lastOk)return;const xml='<?xml version="1.0"?><NOEMIE><MONTANT>'+(lastMontant||'')+'</MONTANT></NOEMIE>';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([xml],{type:'text/xml'}));a.download='facture.xml';a.click();}
+function exportXml(){if(!lastOk)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['<?xml version="1.0"?><NOEMIE><MONTANT>'+(lastMontant||'')+'</MONTANT></NOEMIE>'],{type:'text/xml'}));a.download='facture.xml';a.click();}
 document.addEventListener('DOMContentLoaded',()=>{const d=document.getElementById('course_date');if(d)d.value=new Date().toISOString().slice(0,10);loadUser();if(currentUser){testAPI();loadDashboard();}setTimeout(initGoogleSignIn,600);});
 </script></body></html>
