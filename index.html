@@ -1,1 +1,35 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>TaxiCPAM Copilote</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script async src="https://docs.opencv.org/4.7.0/opencv.js" onload="window._cvReady=true"></script>
+<script src="https://cdn.jsdelivr.net/gh/ColonelParrot/jscanify@master/src/jscanify.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;padding:16px;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:90px}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 0 16px;border-bottom:1px solid #334155;margin-bottom:16px}.header h1{color:#38bdf8;font-size:20px}
+.badge{background:#1e293b;padding:6px 12px;border-radius:20px;font-size:12px}
+.nav-tabs{display:flex;margin:12px 0 20px;border-bottom:1px solid #334155}.nav-tabs button{flex:1;padding:12px 4px;background:none;border:none;color:#94a3b8;font-size:11px;font-weight:600;border-bottom:2px solid transparent;cursor:pointer}.nav-tabs button.active{color:#38bdf8;border-bottom-color:#38bdf8}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0}.stat-card{background:#1e293b;padding:14px 10px;border-radius:12px;text-align:center}.stat-number{font-size:22px;font-weight:800;color:#38bdf8}.stat-number.green{color:#4ade80}.stat-label{font-size:11px;color:#94a3b8;margin-top:4px}
+.btn{background:#0ea5e9;color:#fff;border:none;padding:16px 0;border-radius:14px;font-size:16px;font-weight:700;width:100%;cursor:pointer;margin:10px 0;min-height:52px}.btn:disabled{opacity:.5}.btn-success{background:#22c55e}.btn-secondary{background:#334155}.btn-danger{background:#ef4444}.btn-voice{background:#7c3aed}.btn-voice.listening{background:#ef4444;animation:pulse 1.2s infinite}.btn-sm{padding:10px 14px;font-size:13px;min-height:40px;width:auto;margin:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.row-btns{display:flex;gap:8px;margin:10px 0;align-items:center}.row-btns .btn{flex:1;margin:0;font-size:13px;padding:12px 6px}
+.card{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}.card .title{font-weight:700}.card .body{color:#94a3b8;font-size:13px;margin-top:4px}.card-actions{display:flex;gap:8px;margin-top:12px}
+.input-group{margin-bottom:12px}.input-group label{display:block;color:#94a3b8;font-size:13px;margin-bottom:6px}
+.input-group input:not([type=range]){width:100%;padding:14px 12px;background:#1e293b;border:1px solid #334155;border-radius:12px;color:#f8fafc;font-size:16px}
+.input-group input[type=range]{width:100%}
+.hidden{display:none!important}.hint{color:#64748b;font-size:12px}h2{font-size:18px;margin-bottom:12px}.section-title{color:#94a3b8;font-size:13px;margin:14px 0 8px;text-transform:uppercase}
+.info-box{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:12px;border-radius:10px;margin:12px 0;font-size:13px}
+.error-box{background:#7f1d1d;border:1px solid #f87171;color:#fca5a5;padding:12px;border-radius:10px;margin:12px 0}.success-box{background:#064e3b;border:1px solid #4ade80;color:#86efac}
+.fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:#0ea5e9;border:none;border-radius:30px;font-size:30px;color:#fff;z-index:50}
+.user-badge{display:flex;align-items:center;gap:8px;background:#1e293b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer}.user-badge img{width:22px;height:22px;border-radius:50%}
+.login-screen{position:fixed;inset:0;background:#0f172a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}.login-screen.hidden{display:none!important}.login-screen h1{color:#38bdf8;font-size:24px;margin-bottom:8px}.login-screen p{color:#94a3b8;margin-bottom:24px}
+.cat-btns{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.cat-btns button{padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f8fafc;font-size:12px;cursor:pointer}.cat-btns button.active{background:#0ea5e9;border-color:#0ea5e9}
+.scan-stage{position:relative;width:100%;margin:12px 0;background:#0f172a;border-radius:12px;overflow:hidden;touch-action:none}
+.scan-stage canvas{display:block;width:100%;height:auto;max-height:360px;background:#1e293b}
+.crop-svg{position:absolute;left:0;top:0;width:100%;height:100%;z-index:5}
+.crop-svg polygon{fill:rgba(14,165,233,.12);stroke:#38bdf8;stroke-width:2;stroke-linejoin:round}
+.crop-svg circle{fill:#38bdf8;stroke:#fff;stroke-width:2;cursor:grab}
+</style></head><body>
+<!-- FULL CONTENT TRUNCATED FOR TOOL - USE LOCAL FILE -->
+</body></html>
