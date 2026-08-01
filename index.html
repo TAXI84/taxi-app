@@ -253,7 +253,7 @@ function startWakeListener(){
         voiceMode='verify';
         setWakeBar('🔎 Vérification…',true);
         speak('Je vérifie la course.', function(){ doVoiceVerify(); });
-      } else if(/valide|exporter|exporte|oui/.test(t) && pendingConfirm){
+      } else if(/valide|export|exporte|oui/.test(t) && pendingConfirm){
         pendingConfirm=false;
         voiceMode='idle';
         speak('Course validée. Facture exportée.');
@@ -289,15 +289,38 @@ function startWakeListener(){
     }
   };
   wakeRec.onerror=function(ev){
-    if(ev.error==='not-allowed'){
-      setWakeBar('⚠️ Autorise le micro dans Chrome',false);
-      speak('Autorise le micro pour le mode mains libres.');
+    const err=ev.error||'';
+    if(err==='not-allowed'){
+      setWakeBar('⚠️ Autorise le micro (cadenas → Autoriser)',false);
+      speak('Micro refusé. Clique sur le cadenas à côté de l adresse et autorise le micro.');
+      voiceMode='idle';
+    } else if(err==='no-speech'){
+      if(voiceMode==='listen'){
+        setWakeBar('⚠️ Rien entendu. Redis Taximan',false);
+        speak('Je n ai rien entendu. Redis Taximan puis dicte plus fort.');
+        voiceMode='idle';
+      }
+    } else if(err==='audio-capture'){
+      setWakeBar('⚠️ Aucun micro détecté',false);
+      speak('Aucun micro détecté. Vérifie le micro du téléphone.');
+      voiceMode='idle';
+    } else if(err==='network'){
+      setWakeBar('⚠️ Erreur réseau voix',false);
+      speak('Problème réseau pour la reconnaissance vocale. Réessaie dans quelques secondes.');
+      voiceMode='idle';
+    } else if(err!=='aborted'){
+      setWakeBar('⚠️ Erreur micro — redémarrage…',false);
+      voiceMode='idle';
+      setTimeout(function(){ startWakeListener(); }, 1500);
     }
   };
   wakeRec.onend=function(){
-    if(voiceMode!=='verify'){
-      setTimeout(function(){ try{ if(wakeRec) wakeRec.start(); }catch(e){} }, 400);
-    }
+    if(voiceMode==='verify') return;
+    if(document.hidden) return;
+    setTimeout(function(){
+      try{ if(wakeRec) wakeRec.start(); }
+      catch(e){ setTimeout(function(){ try{ startWakeListener(); }catch(x){} }, 1500); }
+    }, 500);
   };
   try{ wakeRec.start(); }catch(e){ setTimeout(function(){try{wakeRec.start();}catch(x){}}, 800); }
 }
@@ -316,8 +339,14 @@ function doVoiceVerify(){
     ordonnance_ok:document.getElementById('ordonnance_ok').checked
   };
   if(!data.patient_nom||!data.lieu_depart||!data.lieu_arrivee||!data.kilometrage){
-    speak('Formulaire incomplet. Dicte le nom, le départ, l arrivée et les kilomètres.');
-    setWakeBar('⚠️ Formulaire incomplet — redis « Taximan »',false);
+    const manquants=[];
+    if(!data.patient_nom) manquants.push('le nom du patient');
+    if(!data.lieu_depart) manquants.push('le départ');
+    if(!data.lieu_arrivee) manquants.push('l arrivée');
+    if(!data.kilometrage) manquants.push('les kilomètres');
+    const phrase='Il manque '+manquants.join(', ')+'. Redis Taximan puis dicte ces infos.';
+    speak(phrase);
+    setWakeBar('⚠️ Manque : '+manquants.join(', '),false);
     voiceMode='idle';
     startWakeListener();
     return;
@@ -375,8 +404,14 @@ function doVoiceVerify(){
         startWakeListener();
       }
     }catch(e){
-      speak('Erreur de connexion à l API.');
-      setWakeBar('⚠️ Erreur réseau',false);
+      const msg=(e&&e.message)||'';
+      if(msg.indexOf('Failed to fetch')>=0||msg.indexOf('Network')>=0||msg.indexOf('inaccessible')>=0){
+        speak('Serveur inaccessible. Réessaie dans une minute. Les contrôles locaux restent actifs.');
+        setWakeBar('⚠️ API hors ligne — réessaie plus tard',false);
+      } else {
+        speak('Erreur pendant la vérification. '+msg.slice(0,80));
+        setWakeBar('⚠️ Erreur : '+msg.slice(0,40),false);
+      }
       voiceMode='idle';
       startWakeListener();
     }
@@ -399,7 +434,15 @@ function startDictation(){
     setWakeBar('✅ Champs mis à jour. Dis « Taximan vérifie »',false);
     voiceMode='idle';
   };
-  rec.onerror=function(){ if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';} setWakeBar('🎧 Dis « Taximan » pour activer',false); voiceMode='idle'; };
+  rec.onerror=function(ev){
+    if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';}
+    const err=(ev&&ev.error)||'';
+    if(err==='not-allowed'){ speak('Micro refusé. Autorise le micro dans Chrome.'); setWakeBar('⚠️ Autorise le micro',false); }
+    else if(err==='no-speech'){ speak('Rien entendu. Réessaie ou dis Taximan.'); setWakeBar('⚠️ Rien entendu',false); }
+    else { speak('Erreur micro. Réessaie.'); setWakeBar('⚠️ Erreur micro',false); }
+    voiceMode='idle';
+    setTimeout(startWakeListener, 800);
+  };
   rec.onend=function(){ if(btn){btn.classList.remove('listening');btn.textContent='🎤 Dicter';} };
   try{rec.start();}catch(err){speak('Micro deja utilise.');}
 }
